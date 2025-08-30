@@ -94,7 +94,29 @@ DesktopApp AppReader::parseDesktopApp(const std::filesystem::path &path) {
 
   auto lines = toStringArray(contents, "\n");
 
+  bool inDesktopEntry = false;
+
   for (const auto &line : lines) {
+    std::string trimmed = trim(line);
+
+    if (trimmed.empty() || trimmed[0] == '#')
+      continue;
+
+    // detect section headers
+    if (trimmed.front() == '[' && trimmed.back() == ']') {
+      std::string section = toLower(trimmed);
+      if (section == "[desktop entry]") {
+        inDesktopEntry = true;
+        continue;
+      } else {
+        // stop parsing when we hit any other section
+        break;
+      }
+    }
+
+    if (!inDesktopEntry)
+      continue;
+
     auto equalsIndex = line.find('=');
     if (equalsIndex == std::string::npos)
       continue;
