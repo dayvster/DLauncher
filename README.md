@@ -1,4 +1,3 @@
-
 # DLauncher
 
 DLauncher is a lightweight C++ application designed to serve as a launcher. It provides a minimal and fast way to start other programs or scripts.
@@ -16,6 +15,9 @@ DLauncher is a lightweight C++ application designed to serve as a launcher. It p
 - C++17 compatible compiler
 - CMake 3.10 or higher
 - Make or Ninja (depending on your platform)
+
+## Dependencies 
+- Qt 5 or higher (for GUI components)
 
 ### Building
 
