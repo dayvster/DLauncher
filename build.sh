@@ -9,7 +9,7 @@ build_and_run() {
   echo "--------------------------------"
   echo "🚀 Running $APP_NAME..."
   echo "--------------------------------"
-  "./$BUILD_DIR/$APP_NAME"
+  "./$BUILD_DIR/$APP_NAME" &
   APP_PID=$!
 }
 

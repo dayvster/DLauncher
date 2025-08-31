@@ -9,10 +9,12 @@
 #include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
+#include <QProcess>
 #include <QScreen>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <iostream>
+#include <qprocess.h>
 #include <qsizepolicy.h>
 
 Qt::WindowFlags devFlags() {
@@ -23,6 +25,7 @@ int main(int argc, char *argv[]) {
   AppReader appReader;
   QApplication app(argc, argv);
   GlobalEventListener globalKbListener(app);
+  QProcess *process = new QProcess();
 
   appReader.LoadApps();
 
@@ -101,7 +104,10 @@ int main(int argc, char *argv[]) {
         }
 
         std::cout << "Launching: " << cmd << std::endl;
-        std::system(cmd.c_str());
+        // std::system(cmd.c_str());
+        process->startDetached(QString::fromStdString(cmd));
+        // QProcess::startDetached(QString::fromStdString(cmd));
+        app.quit();
       }
     }
   });
