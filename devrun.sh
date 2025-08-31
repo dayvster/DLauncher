@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-APP_NAME="MyQtApp"
+APP_NAME="DLauncher"
 BUILD_DIR="build"
 
 mkdir -p "$BUILD_DIR"
