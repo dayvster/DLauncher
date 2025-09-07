@@ -39,5 +39,5 @@ private:
       "/var/lib/flatpak/applications",
       "/var/lib/flatpak/exports/share/applications"};
 
-  std::vector<DesktopApp> allAps;
+  std::vector<DesktopApp> allApps;
 };

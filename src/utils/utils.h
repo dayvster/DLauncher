@@ -7,10 +7,9 @@ std::vector<std::string> toStringArray(const std::string &content,
                                        const std::string &delimiter = "\n");
 
 size_t contains(const std::string &str, const std::string &search,
-                const bool caseSensetive = true);
+                const bool caseSensitive = true);
 
 std::string toLower(const std::string &str);
-std::string toLower(const std::string &s);
 std::string ltrim(const std::string &s);
 std::string rtrim(const std::string &s);
 std::string trim(const std::string &s);

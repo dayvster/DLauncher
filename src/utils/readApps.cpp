@@ -27,7 +27,7 @@ void AppReader::LoadApps() {
            std::filesystem::directory_iterator(expandedPath)) {
         if (entry.path().extension() != ".desktop")
           continue;
-        allAps.push_back(parseDesktopApp(entry.path()));
+        allApps.push_back(parseDesktopApp(entry.path()));
       }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "Filesystem error: " << e.what() << std::endl;
@@ -41,7 +41,7 @@ AppReader::ReadDesktopApps(int limit, const std::string &searchTerm) {
   std::vector<DesktopApp> filtered;
   std::string searchLower = toLower(searchTerm);
 
-  for (const auto &app : allAps) {
+  for (const auto &app : allApps) {
     if (searchTerm.empty() ||
         toLower(app.name).find(searchLower) != std::string::npos) {
       filtered.push_back(app);
@@ -55,7 +55,7 @@ AppReader::ReadDesktopApps(int limit, const std::string &searchTerm) {
   return filtered;
 }
 
-std::vector<DesktopApp> AppReader::GetAllApps() { return allAps; }
+std::vector<DesktopApp> AppReader::GetAllApps() { return allApps; }
 
 std::vector<DesktopApp> AppReader::SearchApps(std::string searchTerm, int limit,
                                               bool isFuzzy) {
@@ -63,7 +63,7 @@ std::vector<DesktopApp> AppReader::SearchApps(std::string searchTerm, int limit,
   std::string searchLower = toLower(searchTerm);
 
   if (isFuzzy) {
-    for (const auto &app : allAps) {
+    for (const auto &app : allApps) {
       std::string appNameLower = toLower(app.name);
       std::string exec = toLower(app.exec);
       if (similarity(appNameLower, searchLower) > 0.4) {

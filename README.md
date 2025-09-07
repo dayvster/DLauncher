@@ -17,7 +17,7 @@ DLauncher is a lightweight C++ application designed to serve as a launcher. It p
 - Make or Ninja (depending on your platform)
 
 ## Dependencies 
-- Qt 5 or higher (for GUI components)
+- Qt 6 or higher (for GUI components)
 
 ### Building
 

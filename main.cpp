@@ -1,21 +1,20 @@
 
 #include "LockedLineEdit.h"
-#include "list/list.h"
+#include "components/list/list.h"
 #include "listeners/kb.h"
-#include "src/components/appRow/appRow.h"
-#include "src/utils/readApps.h"
-#include "utils.h"
+#include "components/appRow/appRow.h"
+#include "utils/readApps.h"
+#include "utils/utils.h"
 #include <QApplication>
 #include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QProcess>
 #include <QScreen>
+#include <QSizePolicy>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <iostream>
-#include <qprocess.h>
-#include <qsizepolicy.h>
 
 Qt::WindowFlags devFlags() {
   return Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint;
@@ -25,7 +24,6 @@ int main(int argc, char *argv[]) {
   AppReader appReader;
   QApplication app(argc, argv);
   GlobalEventListener globalKbListener(app);
-  QProcess *process = new QProcess();
 
   appReader.LoadApps();
 
@@ -104,9 +102,7 @@ int main(int argc, char *argv[]) {
         }
 
         std::cout << "Launching: " << cmd << std::endl;
-        // std::system(cmd.c_str());
-        process->startDetached(QString::fromStdString(cmd));
-        // QProcess::startDetached(QString::fromStdString(cmd));
+        QProcess::startDetached(QString::fromStdString(cmd));
         app.quit();
       }
     }
