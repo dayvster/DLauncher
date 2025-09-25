@@ -41,24 +41,40 @@ bool ThemeManager::loadTheme(const QString &path)
   bool anySet = false;
   using Setter = std::function<void(const QString &)>;
   QMap<QString, Setter> setters = {
-      {"background", [&](const QString &v) { theme.backgroundColor = QColor(v); anySet = true; }},
-      {"border", [&](const QString &v) { theme.borderColor = QColor(v); anySet = true; }},
-      {"text", [&](const QString &v) { theme.textColor = QColor(v); anySet = true; }},
-      {"highlight", [&](const QString &v) { theme.highlightColor = QColor(v); anySet = true; }},
-      {"input_bg", [&](const QString &v) { theme.inputBackground = QColor(v); anySet = true; }},
-      {"input_border", [&](const QString &v) { theme.inputBorder = QColor(v); anySet = true; }},
-      {"font", [&](const QString &v) { theme.font = QFont(v, theme.fontSize); anySet = true; }},
-      {"font_size", [&](const QString &v) { theme.fontSize = v.toInt(); theme.font.setPointSize(theme.fontSize); anySet = true; }},
-      {"border_radius", [&](const QString &v) { theme.borderRadius = v.toInt(); anySet = true; }},
-      {"padding", [&](const QString &v) { theme.padding = v.toInt(); anySet = true; }},
-      {"window_width", [&](const QString &v) { theme.windowWidth = v.toInt(); anySet = true; }},
-      {"window_height", [&](const QString &v) { theme.windowHeight = v.toInt(); anySet = true; }},
-      {"window_pos_x", [&](const QString &v) { theme.windowPosX = v.toInt(); anySet = true; }},
-      {"window_pos_y", [&](const QString &v) { theme.windowPosY = v.toInt(); anySet = true; }},
-      {"selection", [&](const QString &v) { theme.selectionColor = QColor(v); anySet = true; }},
-      {"row_bg", [&](const QString &v) { theme.rowBackground = QColor(v); anySet = true; }},
-      {"row_hover", [&](const QString &v) { theme.rowHover = QColor(v); anySet = true; }}
-  };
+      {"background", [&](const QString &v)
+       { theme.backgroundColor = QColor(v); anySet = true; }},
+      {"border", [&](const QString &v)
+       { theme.borderColor = QColor(v); anySet = true; }},
+      {"text", [&](const QString &v)
+       { theme.textColor = QColor(v); anySet = true; }},
+      {"highlight", [&](const QString &v)
+       { theme.highlightColor = QColor(v); anySet = true; }},
+      {"input_bg", [&](const QString &v)
+       { theme.inputBackground = QColor(v); anySet = true; }},
+      {"input_border", [&](const QString &v)
+       { theme.inputBorder = QColor(v); anySet = true; }},
+      {"font", [&](const QString &v)
+       { theme.font = QFont(v, theme.fontSize); anySet = true; }},
+      {"font_size", [&](const QString &v)
+       { theme.fontSize = v.toInt(); theme.font.setPointSize(theme.fontSize); anySet = true; }},
+      {"border_radius", [&](const QString &v)
+       { theme.borderRadius = v.toInt(); anySet = true; }},
+      {"padding", [&](const QString &v)
+       { theme.padding = v.toInt(); anySet = true; }},
+      {"window_width", [&](const QString &v)
+       { theme.windowWidth = v.toInt(); anySet = true; }},
+      {"window_height", [&](const QString &v)
+       { theme.windowHeight = v.toInt(); anySet = true; }},
+      {"window_pos_x", [&](const QString &v)
+       { theme.windowPosX = v.toInt(); anySet = true; }},
+      {"window_pos_y", [&](const QString &v)
+       { theme.windowPosY = v.toInt(); anySet = true; }},
+      {"selection", [&](const QString &v)
+       { theme.selectionColor = QColor(v); anySet = true; }},
+      {"row_bg", [&](const QString &v)
+       { theme.rowBackground = QColor(v); anySet = true; }},
+      {"row_hover", [&](const QString &v)
+       { theme.rowHover = QColor(v); anySet = true; }}};
   while (!in.atEnd())
   {
     QString line = in.readLine().trimmed();
