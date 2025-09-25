@@ -17,11 +17,13 @@
 #include <qprocess.h>
 #include <qsizepolicy.h>
 
-Qt::WindowFlags devFlags() {
+Qt::WindowFlags devFlags()
+{
   return Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   AppReader appReader;
   QApplication app(argc, argv);
   GlobalEventListener globalKbListener(app);
@@ -31,12 +33,12 @@ int main(int argc, char *argv[]) {
 
   std::string searchTerm = "";
 
-  globalKbListener.registerKeyCallback(Qt::Key_Escape, [&]() {
+  globalKbListener.registerKeyCallback(Qt::Key_Escape, [&]()
+                                       {
     std::cout << "Escape key pressed, exiting..." << std::endl;
     app.quit();
     exit(0);
-    return 0;
-  });
+    return 0; });
 
   QWidget window;
   window.setWindowFlags(devFlags());
@@ -65,13 +67,15 @@ int main(int argc, char *argv[]) {
 
   std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
 
-  for (auto &app : allApps) {
+  for (auto &app : allApps)
+  {
     list->addRow(new AppRow(list, &app));
   }
 
   layout->addWidget(list);
 
-  QObject::connect(input, &QLineEdit::textChanged, [&](const QString &text) {
+  QObject::connect(input, &QLineEdit::textChanged, [&](const QString &text)
+                   {
     std::string search = text.toStdString();
     list->listWidget->clear();
     if (search.empty()) {
@@ -85,10 +89,10 @@ int main(int argc, char *argv[]) {
         appReader.SearchApps(search, 64, true);
     for (auto &app : filteredApps) {
       list->addRow(new AppRow(list, &app));
-    }
-  });
+    } });
 
-  QObject::connect(input, &QLineEdit::returnPressed, [&]() {
+  QObject::connect(input, &QLineEdit::returnPressed, [&]()
+                   {
     int row = list->listWidget->currentRow();
     if (row >= 0 && row < list->listWidget->count()) {
 
@@ -109,8 +113,7 @@ int main(int argc, char *argv[]) {
         // QProcess::startDetached(QString::fromStdString(cmd));
         app.quit();
       }
-    }
-  });
+    } });
 
   QRect screenGeometry = QApplication::primaryScreen()->geometry();
   int x = (screenGeometry.width() - window.width()) / 2;
