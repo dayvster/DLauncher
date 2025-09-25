@@ -16,6 +16,7 @@
 #include <iostream>
 #include <qprocess.h>
 #include <qsizepolicy.h>
+#include "src/utils/utils.h"
 
 Qt::WindowFlags devFlags()
 {
@@ -95,22 +96,15 @@ int main(int argc, char *argv[])
                    {
     int row = list->listWidget->currentRow();
     if (row >= 0 && row < list->listWidget->count()) {
-
       QListWidgetItem *item = list->listWidget->item(row);
-      AppRow *appRow =
-          dynamic_cast<AppRow *>(list->listWidget->itemWidget(item));
+      AppRow *appRow = dynamic_cast<AppRow *>(list->listWidget->itemWidget(item));
       if (appRow) {
-        std::string cmd = appRow->app->exec;
-
-        size_t percentPos = cmd.find('%');
-        if (percentPos != std::string::npos) {
-          cmd = cmd.substr(0, percentPos);
-        }
-
-        std::cout << "Launching: " << cmd << std::endl;
-        // std::system(cmd.c_str());
-        process->startDetached(QString::fromStdString(cmd));
-        // QProcess::startDetached(QString::fromStdString(cmd));
+        auto [program, args] = parseExecCommand(QString::fromStdString(appRow->app->exec));
+        if (program.isEmpty()) return;
+        std::cout << "Launching: " << program.toStdString();
+        for (const auto &arg : args) std::cout << " " << arg.toStdString();
+        std::cout << std::endl;
+        QProcess::startDetached(program, args);
         app.quit();
       }
     } });
