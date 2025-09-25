@@ -110,6 +110,21 @@ bool starts_with(const std::string &s, const std::string &prefix)
   return std::equal(prefix.begin(), prefix.end(), s.begin());
 }
 
+/*
+  Calculates the Damerau-Levenshtein distance between two strings.
+  This distance metric counts the minimum number of operations needed to
+  transform one string into the other, where an operation is defined as an
+  insertion, deletion, substitution of a single character, or a transposition
+  of two adjacent characters.
+
+  Example: `trmnl -> terminal (3 operations: t->te, r->rm, nl->inal) = 3`
+
+  example usage:
+  ```
+  int dist = damerauLevenshtein("example", "samples");
+  std::cout << "Damerau-Levenshtein distance: " << dist << std::endl;
+  ```
+*/
 int damerauLevenshtein(const std::string &s1, const std::string &s2)
 {
   size_t m = s1.size();
