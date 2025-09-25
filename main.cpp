@@ -53,9 +53,12 @@ int main(int argc, char *argv[])
   window.setPalette(pal);
   window.setAutoFillBackground(true);
   // Set window position if specified, otherwise center
-  if (theme.windowPosX >= 0 && theme.windowPosY >= 0) {
+  if (theme.windowPosX >= 0 && theme.windowPosY >= 0)
+  {
     window.move(theme.windowPosX, theme.windowPosY);
-  } else {
+  }
+  else
+  {
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int x = (screenGeometry.width() - theme.windowWidth) / 2;
     int y = (screenGeometry.height() - theme.windowHeight) / 2;
