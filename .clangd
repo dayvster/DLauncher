@@ -1,0 +1,25 @@
+CompileFlags:
+  Add: [-std=gnu++17, -mno-direct-extern-access]
+
+If:
+  PathMatch: ["src/**", "main.cpp"]
+  CompileFlags:
+    Add: [-DQT_CORE_LIB, -DQT_GUI_LIB, -DQT_NO_DEBUG, -DQT_WIDGETS_LIB]
+
+IncludePaths:
+  - ./src
+  - ./src/components
+  - ./src/utils
+  - ./build/DLauncher_autogen/include
+  - /usr/include/qt6/QtWidgets
+  - /usr/include/qt6
+  - /usr/include/qt6/QtCore
+  - /usr/include/qt6/QtGui
+  - /usr/lib/qt6/mkspecs/linux-g++
+
+# Enable clang-tidy and clang-format integration if available
+Checks: "clang-diagnostic-*,clang-analyzer-*"
+FormatStyle: file
+
+# Set the language standard
+Standard: c++17
