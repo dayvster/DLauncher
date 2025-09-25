@@ -2,22 +2,18 @@
 #include <QProcess>
 #include <utility>
 
+#include "utils.h"
+#include <algorithm>
+
 std::pair<QString, QStringList> parseExecCommand(const QString &exec)
 {
   QString cleaned = exec;
-  // Remove field codes like %U, %u, %F, %f, %i, %c, %k, etc.
-  QRegularExpression re("%[a-zA-Z]");
-  cleaned.replace(re, "");
-  cleaned = cleaned.trimmed();
   QStringList parts = QProcess::splitCommand(cleaned);
   if (parts.isEmpty())
     return {QString(), QStringList()};
   QString program = parts.takeFirst();
   return {program, parts};
 }
-
-#include "utils.h"
-#include <algorithm>
 
 std::vector<std::string> toStringArray(const std::string &content,
                                        const std::string &delimiter)
