@@ -35,6 +35,34 @@ bool ThemeManager::loadTheme(const QString &path)
     return false;
   QTextStream in(&file);
   bool anySet = false;
+  using Setter = std::function<void(const QString &)>;
+  QMap<QString, Setter> setters = {
+      {"background", [&](const QString &v)
+       { theme.backgroundColor = QColor(v); anySet = true; }},
+      {"border", [&](const QString &v)
+       { theme.borderColor = QColor(v); anySet = true; }},
+      {"text", [&](const QString &v)
+       { theme.textColor = QColor(v); anySet = true; }},
+      {"highlight", [&](const QString &v)
+       { theme.highlightColor = QColor(v); anySet = true; }},
+      {"input_bg", [&](const QString &v)
+       { theme.inputBackground = QColor(v); anySet = true; }},
+      {"input_border", [&](const QString &v)
+       { theme.inputBorder = QColor(v); anySet = true; }},
+      {"font", [&](const QString &v)
+       { theme.font = QFont(v, theme.fontSize); anySet = true; }},
+      {"font_size", [&](const QString &v)
+       { theme.fontSize = v.toInt(); theme.font.setPointSize(theme.fontSize); anySet = true; }},
+      {"border_radius", [&](const QString &v)
+       { theme.borderRadius = v.toInt(); anySet = true; }},
+      {"padding", [&](const QString &v)
+       { theme.padding = v.toInt(); anySet = true; }},
+      {"selection", [&](const QString &v)
+       { theme.selectionColor = QColor(v); anySet = true; }},
+      {"row_bg", [&](const QString &v)
+       { theme.rowBackground = QColor(v); anySet = true; }},
+      {"row_hover", [&](const QString &v)
+       { theme.rowHover = QColor(v); anySet = true; }}};
   while (!in.atEnd())
   {
     QString line = in.readLine().trimmed();
@@ -45,72 +73,8 @@ bool ThemeManager::loadTheme(const QString &path)
       continue;
     QString key = parts[0].trimmed();
     QString value = parts[1].trimmed();
-    if (key == "background")
-    {
-      theme.backgroundColor = QColor(value);
-      anySet = true;
-    }
-    else if (key == "border")
-    {
-      theme.borderColor = QColor(value);
-      anySet = true;
-    }
-    else if (key == "text")
-    {
-      theme.textColor = QColor(value);
-      anySet = true;
-    }
-    else if (key == "highlight")
-    {
-      theme.highlightColor = QColor(value);
-      anySet = true;
-    }
-    else if (key == "input_bg")
-    {
-      theme.inputBackground = QColor(value);
-      anySet = true;
-    }
-    else if (key == "input_border")
-    {
-      theme.inputBorder = QColor(value);
-      anySet = true;
-    }
-    else if (key == "font")
-    {
-      theme.font = QFont(value, theme.fontSize);
-      anySet = true;
-    }
-    else if (key == "font_size")
-    {
-      theme.fontSize = value.toInt();
-      theme.font.setPointSize(theme.fontSize);
-      anySet = true;
-    }
-    else if (key == "border_radius")
-    {
-      theme.borderRadius = value.toInt();
-      anySet = true;
-    }
-    else if (key == "padding")
-    {
-      theme.padding = value.toInt();
-      anySet = true;
-    }
-    else if (key == "selection")
-    {
-      theme.selectionColor = QColor(value);
-      anySet = true;
-    }
-    else if (key == "row_bg")
-    {
-      theme.rowBackground = QColor(value);
-      anySet = true;
-    }
-    else if (key == "row_hover")
-    {
-      theme.rowHover = QColor(value);
-      anySet = true;
-    }
+    if (setters.contains(key))
+      setters[key](value);
   }
   if (!anySet)
     setDefaults(); // If nothing was set, use sane defaults
