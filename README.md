@@ -1,5 +1,8 @@
 # DLauncher
 
+![Build Status](https://github.com/dayvster/DLauncher/actions/workflows/cmake.yml/badge.svg)
+![Version](https://img.shields.io/badge/version-0.3-blue)
+
 DLauncher is a lightweight C++ application designed to serve as a launcher. It provides a minimal and fast way to start other programs or scripts.
 
 ## Features
