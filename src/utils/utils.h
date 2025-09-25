@@ -1,3 +1,8 @@
+// Parses a .desktop Exec string, removes field codes, splits into program and args.
+// Returns a pair: (program, args)
+#include <QString>
+#include <QStringList>
+std::pair<QString, QStringList> parseExecCommand(const QString &exec);
 
 #pragma once
 #include <string>
