@@ -1,7 +1,7 @@
 # DLauncher
 
 ![Version](https://img.shields.io/badge/version-0.3-blue)
-![License](https://img.shields.io/github/license/dayvster/DLauncher)
+![License](https://img.shields.io/badge/license-GPLv3-blue)
 ![Platform](https://img.shields.io/badge/platform-linux--x86%7Carm-lightgrey)
 ![Language](https://img.shields.io/badge/language-C%2B%2B17-blue)
 ![Last Commit](https://img.shields.io/github/last-commit/dayvster/DLauncher)
