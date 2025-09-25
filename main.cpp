@@ -46,12 +46,21 @@ int main(int argc, char *argv[])
 
   QWidget window;
   window.setWindowFlags(devFlags());
-  window.setFixedSize(500, 300);
+  window.setFixedSize(theme.windowWidth, theme.windowHeight);
   window.setAttribute(Qt::WA_TranslucentBackground);
   QPalette pal = window.palette();
   pal.setColor(QPalette::Window, theme.backgroundColor);
   window.setPalette(pal);
   window.setAutoFillBackground(true);
+  // Set window position if specified, otherwise center
+  if (theme.windowPosX >= 0 && theme.windowPosY >= 0) {
+    window.move(theme.windowPosX, theme.windowPosY);
+  } else {
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int x = (screenGeometry.width() - theme.windowWidth) / 2;
+    int y = (screenGeometry.height() - theme.windowHeight) / 2;
+    window.move(x, y);
+  }
 
   ListView *list = new ListView(&window);
 

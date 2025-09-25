@@ -16,6 +16,10 @@ struct Theme
   int fontSize = 16;
   int borderRadius = 10;
   int padding = 10;
+  int windowWidth = 500;
+  int windowHeight = 300;
+  int windowPosX = -1; // -1 means center
+  int windowPosY = -1;
   QColor selectionColor;
   QColor rowBackground;
   QColor rowHover;
