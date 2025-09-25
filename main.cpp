@@ -5,6 +5,7 @@
 #include "src/components/appRow/appRow.h"
 #include "src/utils/readApps.h"
 #include "utils.h"
+#include "src/utils/theme.h"
 #include <QApplication>
 #include <QIcon>
 #include <QLabel>
@@ -27,6 +28,8 @@ int main(int argc, char *argv[])
 {
   AppReader appReader;
   QApplication app(argc, argv);
+  ThemeManager themeManager;
+  const Theme &theme = themeManager.currentTheme();
   GlobalEventListener globalKbListener(app);
   QProcess *process = new QProcess();
 
@@ -45,22 +48,31 @@ int main(int argc, char *argv[])
   window.setWindowFlags(devFlags());
   window.setFixedSize(500, 300);
   window.setAttribute(Qt::WA_TranslucentBackground);
+  QPalette pal = window.palette();
+  pal.setColor(QPalette::Window, theme.backgroundColor);
+  window.setPalette(pal);
+  window.setAutoFillBackground(true);
 
   ListView *list = new ListView(&window);
 
   QVBoxLayout *layout = new QVBoxLayout(&window);
 
   LockedLineEdit *input = new LockedLineEdit(&window, list->listWidget);
-  input->setStyleSheet(R"(
+  input->setStyleSheet(QString(R"(
         QLineEdit {
-            background-color: rgba(0, 0, 0, 120);
-            border: 2px solid rgba(0, 0, 0, 150);
+            background-color: %1;
+            border: 2px solid %2;
             border-radius: 10px;
             padding: 10px;
-            color: white;
-            font-size: 16px;
+            color: %3;
+            font-size: %4px;
         }
-    )");
+    )")
+                           .arg(theme.inputBackground.name(QColor::HexArgb))
+                           .arg(theme.inputBorder.name(QColor::HexArgb))
+                           .arg(theme.textColor.name(QColor::HexArgb))
+                           .arg(theme.font.pointSize()));
+  input->setFont(theme.font);
   input->setPlaceholderText("Search...");
   input->setFocus();
 
@@ -72,6 +84,7 @@ int main(int argc, char *argv[])
   {
     list->addRow(new AppRow(list, &app));
   }
+  // Optionally, you can pass theme to AppRow for per-row theming if needed
 
   layout->addWidget(list);
 
