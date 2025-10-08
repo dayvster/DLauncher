@@ -92,11 +92,21 @@ int main(int argc, char *argv[])
 
   std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
 
-  for (auto &app : allApps)
+  for (const auto &app : allApps)
   {
-    list->addRow(new AppRow(list, &app));
+    list->addRow(new AppRow(list, app));
   }
   // Optionally, you can pass theme to AppRow for per-row theming if needed
+
+  QObject::connect(list->listWidget, &QListWidget::currentRowChanged, [&](int row)
+                   {
+    if (row >= 0 && row < list->listWidget->count()) {
+      QListWidgetItem *item = list->listWidget->item(row);
+      AppRow *appRow = dynamic_cast<AppRow *>(list->listWidget->itemWidget(item));
+      if (appRow) {
+        std::cout << "Exec: " << appRow->app.exec << std::endl;
+      }
+    } });
 
   layout->addWidget(list);
 
@@ -106,15 +116,15 @@ int main(int argc, char *argv[])
     list->listWidget->clear();
     if (search.empty()) {
       std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
-      for (auto &app : allApps) {
-        list->addRow(new AppRow(list, &app));
+      for (const auto &app : allApps) {
+        list->addRow(new AppRow(list, app));
       }
       return;
     }
     std::vector<DesktopApp> filteredApps =
         appReader.SearchApps(search, 64, true);
-    for (auto &app : filteredApps) {
-      list->addRow(new AppRow(list, &app));
+    for (const auto &app : filteredApps) {
+      list->addRow(new AppRow(list, app));
     } });
 
   QObject::connect(input, &QLineEdit::returnPressed, [&]()
@@ -124,7 +134,7 @@ int main(int argc, char *argv[])
       QListWidgetItem *item = list->listWidget->item(row);
       AppRow *appRow = dynamic_cast<AppRow *>(list->listWidget->itemWidget(item));
       if (appRow) {
-        auto [program, args] = parseExecCommand(QString::fromStdString(appRow->app->exec));
+        auto [program, args] = parseExecCommand(QString::fromStdString(appRow->app.exec));
         if (program.isEmpty()) return;
         std::cout << "Launching: " << program.toStdString();
         for (const auto &arg : args) std::cout << " " << arg.toStdString();

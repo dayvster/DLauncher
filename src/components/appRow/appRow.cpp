@@ -30,12 +30,10 @@ const QString AppRow::nameStyleTemplate = R"(
     }
 )";
 
-AppRow::AppRow(QWidget *parent, DesktopApp *app) : QWidget(parent), app(app) {
-  if (!app)
-    return;
-
-  this->setObjectName(QString::fromStdString(app->name));
-  this->setToolTip(QString::fromStdString(app->comment.value_or("")));
+AppRow::AppRow(QWidget *parent, const DesktopApp &app) : QWidget(parent), app(app)
+{
+  this->setObjectName(QString::fromStdString(app.name));
+  this->setToolTip(QString::fromStdString(app.comment.value_or("")));
   this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
   this->setStyleSheet(rowStyle);
@@ -48,16 +46,19 @@ AppRow::AppRow(QWidget *parent, DesktopApp *app) : QWidget(parent), app(app) {
   QLabel *iconLabel = new QLabel(this);
 
   bool iconSet = false;
-  if (app->icon) {
-    QString iconName = QString::fromStdString(app->icon.value());
+  if (app.icon)
+  {
+    QString iconName = QString::fromStdString(app.icon.value());
     QIcon icon = QIcon::fromTheme(iconName);
-    if (!icon.isNull()) {
+    if (!icon.isNull())
+    {
       iconLabel->setPixmap(icon.pixmap(ICON_SIZE, ICON_SIZE));
       iconSet = true;
     }
   }
 
-  if (!iconSet) {
+  if (!iconSet)
+  {
     QPixmap pixmap(ICON_SIZE, ICON_SIZE);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -75,7 +76,7 @@ AppRow::AppRow(QWidget *parent, DesktopApp *app) : QWidget(parent), app(app) {
     painter.setFont(font);
     painter.setRenderHint(QPainter::TextAntialiasing);
     painter.drawText(pixmap.rect(), Qt::AlignCenter,
-                     QString::fromStdString(app->name.substr(0, 1)));
+                     QString::fromStdString(app.name.substr(0, 1)));
 
     painter.end();
     iconLabel->setPixmap(pixmap);
@@ -84,7 +85,7 @@ AppRow::AppRow(QWidget *parent, DesktopApp *app) : QWidget(parent), app(app) {
   iconLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   layout->addWidget(iconLabel);
 
-  QLabel *nameLabel = new QLabel(QString::fromStdString(app->name), this);
+  QLabel *nameLabel = new QLabel(QString::fromStdString(app.name), this);
   nameLabel->setStyleSheet(nameStyleTemplate.arg(TEXT_SIZE + 4));
   nameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   layout->addWidget(nameLabel);
