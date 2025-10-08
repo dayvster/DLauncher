@@ -6,12 +6,13 @@
 #include <QLabel>
 #include <QWidget>
 
-class AppRow : public QWidget {
+class AppRow : public QWidget
+{
   Q_OBJECT
 
 public:
-  DesktopApp *app;
-  explicit AppRow(QWidget *parent = nullptr, DesktopApp *app = nullptr);
+  DesktopApp app;
+  explicit AppRow(QWidget *parent = nullptr, const DesktopApp &app = DesktopApp());
 
 private:
   const unsigned int ICON_SIZE = 24;
