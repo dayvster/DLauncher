@@ -18,6 +18,9 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/src/*.cpp
     ${CMAKE_SOURCE_DIR}/*.cpp
 )
+# Remove duplicate sources from utils
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/utils/readApps.cpp")
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/utils/theme.cpp")
 
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/src/*.h

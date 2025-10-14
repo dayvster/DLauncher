@@ -6,7 +6,8 @@
 
 class QListWidget;
 
-class LockedLineEdit : public QLineEdit {
+class LockedLineEdit : public QLineEdit
+{
   Q_OBJECT
 public:
   explicit LockedLineEdit(QWidget *parent = nullptr,
@@ -20,4 +21,4 @@ private:
   QListWidget *listWidget;
 };
 
-#endif // LOCKEDLINEEDIT_H
+#endif

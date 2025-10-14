@@ -23,4 +23,4 @@ private:
   static const QString nameStyleTemplate;
 };
 
-#endif // APPROW_H
+#endif

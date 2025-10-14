@@ -7,7 +7,8 @@
 #include <map>
 #include <vector>
 
-class GlobalEventListener : public QObject {
+class GlobalEventListener : public QObject
+{
   Q_OBJECT
 
 public:
@@ -24,4 +25,4 @@ private:
   std::map<int, std::vector<std::function<void()>>> ctrlNumberCallbacks;
 };
 
-#endif // GLOBALEVENTLISTENER_H
+#endif
