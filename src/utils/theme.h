@@ -18,7 +18,7 @@ struct Theme
   int padding = 10;
   int windowWidth = 500;
   int windowHeight = 300;
-  int windowPosX = -1; // -1 means center
+  int windowPosX = -1;
   int windowPosY = -1;
   QColor selectionColor;
   QColor rowBackground;
@@ -29,7 +29,7 @@ class ThemeManager
 {
 public:
   ThemeManager();
-  bool loadTheme(const QString &path); // ~/.config/dlauncher/theme
+  bool loadTheme(const QString &path);
   const Theme &currentTheme() const;
   static QString defaultConfigPath();
 

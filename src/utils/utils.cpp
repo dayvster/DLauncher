@@ -1,3 +1,7 @@
+
+#include <filesystem>
+#include "utils.h"
+
 #include <QRegularExpression>
 #include <QProcess>
 #include <utility>
@@ -162,4 +166,16 @@ double similarity(const std::string &a, const std::string &b)
   if (maxLen == 0)
     return 1.0;
   return 1.0 - double(dist) / maxLen;
+}
+
+PathType detectPathType(const std::string &search)
+{
+  std::filesystem::path p(search);
+  if (!std::filesystem::exists(p))
+    return PathType::NotAPath;
+  if (std::filesystem::is_regular_file(p))
+    return PathType::File;
+  if (std::filesystem::is_directory(p))
+    return PathType::Directory;
+  return PathType::NotAPath;
 }

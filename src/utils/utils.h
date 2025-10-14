@@ -1,13 +1,11 @@
-// Parses a .desktop Exec string, removes field codes, splits into program and args.
-// Returns a pair: (program, args)
 #include <QString>
 #include <QStringList>
-std::pair<QString, QStringList> parseExecCommand(const QString &exec);
 
 #pragma once
 #include <string>
 #include <vector>
 
+std::pair<QString, QStringList> parseExecCommand(const QString &exec);
 std::vector<std::string> toStringArray(const std::string &content,
                                        const std::string &delimiter = "\n");
 
@@ -25,3 +23,12 @@ std::vector<std::string> toStringArray(const std::string &s,
 
 int damerauLevenshtein(const std::string &s1, const std::string &s2);
 double similarity(const std::string &a, const std::string &b);
+
+enum class PathType
+{
+  NotAPath = 0,
+  File = 1,
+  Directory = 2
+};
+
+PathType detectPathType(const std::string &search);

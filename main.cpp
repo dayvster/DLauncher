@@ -1,3 +1,4 @@
+#include <fstream>
 
 #include "LockedLineEdit.h"
 #include "list/list.h"
@@ -18,6 +19,7 @@
 #include <qprocess.h>
 #include <qsizepolicy.h>
 #include "src/utils/utils.h"
+#include "src/utils/debug.h"
 
 Qt::WindowFlags devFlags()
 {
@@ -25,7 +27,40 @@ Qt::WindowFlags devFlags()
 }
 
 int main(int argc, char *argv[])
+// ...existing code...
 {
+  // Frequency map: app exec string -> launch count (persistent)
+  std::string configDir = std::string(getenv("HOME")) + "/.config";
+  std::string freqPath = configDir + "/dlauncher_freq.txt";
+  // Ensure config dir exists
+  std::filesystem::create_directories(configDir);
+  // Ensure file exists and is readable/writable
+  {
+    std::ofstream f(freqPath, std::ios::app);
+    f.close();
+  }
+  std::map<std::string, int> appFrequency;
+  {
+    std::ifstream f(freqPath);
+    std::string line;
+    while (std::getline(f, line))
+    {
+      auto pos = line.find(':');
+      if (pos != std::string::npos)
+      {
+        std::string key = line.substr(0, pos);
+        try
+        {
+          int val = std::stoi(line.substr(pos + 1));
+          appFrequency[key] = val;
+        }
+        catch (...)
+        {
+        }
+      }
+    }
+  }
+  Debug::log("Debug run string: " + Debug::generateRandomString());
   AppReader appReader;
   QApplication app(argc, argv);
   ThemeManager themeManager;
@@ -116,13 +151,42 @@ int main(int argc, char *argv[])
     list->listWidget->clear();
     if (search.empty()) {
       std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
+      std::sort(allApps.begin(), allApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
+        int fa = appFrequency[a.exec];
+        int fb = appFrequency[b.exec];
+        if (fa == fb) {
+          // Alphabetical tiebreaker
+          return a.name < b.name;
+        }
+        // Zero frequency always at the bottom
+        if (fa == 0) return false;
+        if (fb == 0) return true;
+        return fa > fb;
+      });
       for (const auto &app : allApps) {
         list->addRow(new AppRow(list, app));
       }
       return;
     }
-    std::vector<DesktopApp> filteredApps =
-        appReader.SearchApps(search, 64, true);
+
+    // Only app search: fuzzy match apps
+    std::vector<DesktopApp> filteredApps;
+    for (const auto &app : appReader.GetAllApps()) {
+      if (similarity(search, app.name) > 0.5 || contains(app.name, search, false) != std::string::npos) {
+        filteredApps.push_back(app);
+      }
+    }
+    // Sort by frequency (most-run first)
+    std::sort(filteredApps.begin(), filteredApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
+      int fa = appFrequency[a.exec];
+      int fb = appFrequency[b.exec];
+      if (fa == fb) {
+        return a.name < b.name;
+      }
+      if (fa == 0) return false;
+      if (fb == 0) return true;
+      return fa > fb;
+    });
     for (const auto &app : filteredApps) {
       list->addRow(new AppRow(list, app));
     } });
@@ -139,8 +203,19 @@ int main(int argc, char *argv[])
         std::cout << "Launching: " << program.toStdString();
         for (const auto &arg : args) std::cout << " " << arg.toStdString();
         std::cout << std::endl;
-        QProcess::startDetached(program, args);
-        app.quit();
+  // Increment frequency count and persist
+  appFrequency[appRow->app.exec]++;
+  {
+    appFrequency[appRow->app.exec]++;
+    std::ofstream f(freqPath);
+    for (const auto& [key, val] : appFrequency) {
+      if (val > 0) {
+        f << key << ":" << val << "\n";
+      }
+    }
+  }
+  QProcess::startDetached(program, args);
+  app.quit();
       }
     } });
 

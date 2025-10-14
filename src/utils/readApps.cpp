@@ -14,7 +14,7 @@ AppReader::~AppReader() = default;
 
 void AppReader::LoadApps()
 {
-  // Priority: user dirs first, then system
+
   std::vector<std::string> priorityDirs = {
       std::string(getenv("HOME")) + "/.local/share/applications",
       "/usr/local/share/applications",
@@ -135,7 +135,6 @@ DesktopApp AppReader::parseDesktopApp(const std::filesystem::path &path)
     if (trimmed.empty() || trimmed[0] == '#')
       continue;
 
-    // detect section headers
     if (trimmed.front() == '[' && trimmed.back() == ']')
     {
       std::string section = toLower(trimmed);
@@ -146,7 +145,7 @@ DesktopApp AppReader::parseDesktopApp(const std::filesystem::path &path)
       }
       else
       {
-        // stop parsing when we hit any other section
+
         break;
       }
     }
