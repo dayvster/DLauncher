@@ -2,7 +2,7 @@
 #ifndef APPROW_H
 #define APPROW_H
 
-#include "readApps.h"
+#include "core/apps/readApps.h"
 #include <QLabel>
 #include <QWidget>
 
