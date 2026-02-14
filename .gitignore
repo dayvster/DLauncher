@@ -41,3 +41,6 @@ Makefile
 # Misc
 tags
 compile_commands.json
+
+# Qt auto-gen artifacts (created by build in repo root)
+.qt/
