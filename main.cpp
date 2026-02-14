@@ -49,11 +49,16 @@ int main(int argc, char *argv[])
 
   // By default don't include NoDisplay/Hidden entries; allow override via CLI flag
   bool includeHidden = false;
+  bool dumpMode = false;
   bool menuMode = false;
   std::vector<std::pair<std::string, std::string>> menuItems; // label, command
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
     if (arg == "--include-hidden" || arg == "--show-hidden") includeHidden = true;
+    else if (arg == "--dump") {
+      // Diagnostic mode: print each .desktop path and whether it would be included
+      dumpMode = true;
+    }
     else if (arg == "--menu-file" && i + 1 < argc) {
       menuMode = true;
       std::string path = argv[++i];
@@ -100,6 +105,12 @@ int main(int argc, char *argv[])
     }
   }
   appReader.LoadApps(includeHidden);
+
+  if (dumpMode) {
+    // Print diagnostics and exit
+    appReader.DumpAndPrint(includeHidden);
+    return 0;
+  }
 
   std::string searchTerm = "";
 
