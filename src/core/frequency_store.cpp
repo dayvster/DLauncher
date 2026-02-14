@@ -6,7 +6,12 @@
 FrequencyStore::FrequencyStore(const std::string &p)
     : path(p)
 {
-  store = json_util::load_freq(path);
+  // load into temporary ordered map then populate unordered_map
+  try {
+    std::map<std::string,int> tmp = json_util::load_freq(path);
+    store.reserve(tmp.size() + 64);
+    for (const auto &p : tmp) store.emplace(p.first, p.second);
+  } catch(...) {}
   dirtyFlag = false;
 }
 
@@ -29,6 +34,9 @@ void FrequencyStore::save()
   // ensure parent dir exists
   std::filesystem::path p(path);
   if (!p.parent_path().empty()) xdg::ensureDir(p.parent_path());
-  json_util::save_freq(path, store);
+  // json_util expects a std::map; build one from unordered_map
+  std::map<std::string,int> out;
+  out.insert(store.begin(), store.end());
+  json_util::save_freq(path, out);
   dirtyFlag = false;
 }

@@ -47,14 +47,16 @@ int main(int argc, char *argv[])
   const Theme &theme = themeManager.currentTheme();
   GlobalEventListener globalKbListener(app);
 
-  // By default don't include NoDisplay/Hidden entries; allow override via CLI flag
+  // By default include all .desktop entries (don't skip NoDisplay/Hidden/OnlyShowIn)
   bool includeHidden = false;
   bool dumpMode = false;
   bool menuMode = false;
+  bool showSystem = false;
   std::vector<std::pair<std::string, std::string>> menuItems; // label, command
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
     if (arg == "--include-hidden" || arg == "--show-hidden") includeHidden = true;
+    else if (arg == "--show-system") showSystem = true;
     else if (arg == "--dump") {
       // Diagnostic mode: print each .desktop path and whether it would be included
       dumpMode = true;
@@ -104,7 +106,13 @@ int main(int argc, char *argv[])
       if (!label.empty() && !cmd.empty()) menuItems.emplace_back(label, cmd);
     }
   }
-  appReader.LoadApps(includeHidden);
+  appReader.LoadApps(includeHidden, showSystem);
+
+  if (dumpMode) {
+    // Print diagnostics and exit
+    appReader.DumpAndPrint(includeHidden, showSystem);
+    return 0;
+  }
 
   if (dumpMode) {
     // Print diagnostics and exit
@@ -164,21 +172,21 @@ int main(int argc, char *argv[])
 
   layout->addWidget(input);
 
-  std::vector<DesktopApp> allApps;
-  if (menuMode) {
-    for (auto &p : menuItems) {
-      DesktopApp a;
-      a.name = p.first;
-      a.exec = p.second;
-      allApps.push_back(a);
+    // Create rows lazily from pointers into the canonical app list
+    if (menuMode) {
+      for (auto &p : menuItems) {
+        DesktopApp a;
+        a.name = p.first;
+        a.exec = p.second;
+        list->addRow(new AppRow(list, a));
+      }
+    } else {
+      auto &master = appReader.GetAllApps();
+      size_t count = master.size();
+      for (size_t i = 0; i < count && i < 64; ++i) {
+        list->addRow(new AppRow(list, master[i]));
+      }
     }
-  } else {
-    allApps = appReader.ReadDesktopApps(64, "");
-  }
-
-  for (const auto &app : allApps) {
-    list->addRow(new AppRow(list, app));
-  }
 
   QObject::connect(list->listWidget, &QListWidget::currentRowChanged, [&](int row)
                    {
@@ -214,25 +222,25 @@ int main(int argc, char *argv[])
       return;
     }
 
-    std::vector<DesktopApp> filteredApps;
+  std::vector<const DesktopApp*> filteredAppsPtrs;
     for (const auto &app : appReader.GetAllApps()) {
       if (similarity(search, app.name) > 0.5 || contains(app.name, search, false) != std::string::npos) {
-        filteredApps.push_back(app);
+        filteredAppsPtrs.push_back(&app);
       }
     }
 
-    std::sort(filteredApps.begin(), filteredApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
-      int fa = freqStore.get(a.exec);
-      int fb = freqStore.get(b.exec);
+    std::sort(filteredAppsPtrs.begin(), filteredAppsPtrs.end(), [&](const DesktopApp *a, const DesktopApp *b) {
+      int fa = freqStore.get(a->exec);
+      int fb = freqStore.get(b->exec);
       if (fa == fb) {
-        return a.name < b.name;
+        return a->name < b->name;
       }
       if (fa == 0) return false;
       if (fb == 0) return true;
       return fa > fb;
     });
-    for (const auto &app : filteredApps) {
-      list->addRow(new AppRow(list, app));
+    for (const auto *appPtr : filteredAppsPtrs) {
+      list->addRow(new AppRow(list, *appPtr));
     } });
 
   QObject::connect(input, &QLineEdit::returnPressed, [&]()
@@ -284,6 +292,16 @@ int main(int argc, char *argv[])
   window.move(x, y);
 
   window.show();
+
+  // Safety: ensure initial rows are populated (some environments/layout timing
+  // issues can leave the list empty). If list is empty, populate from master.
+  if (!menuMode && list->listWidget->count() == 0) {
+    auto &master = appReader.GetAllApps();
+    size_t count = master.size();
+    for (size_t i = 0; i < count && i < 64; ++i) {
+      list->addRow(new AppRow(list, master[i]));
+    }
+  }
 
   return app.exec();
 }

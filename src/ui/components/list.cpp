@@ -1,4 +1,5 @@
 #include "list.h"
+#include <iostream>
 #include "list.h"
 
 QString StyleSheet = R"(
@@ -57,6 +58,8 @@ void ListView::addRow(QWidget *row)
   listWidget->addItem(item);
   listWidget->setItemWidget(item, row);
   count++;
+  // Debug: log when rows are added to help diagnose empty UI issues
+  std::cout << "[ListView] addRow: now has " << count << " rows" << std::endl;
 }
 
 void ListView::removeAllRows()
@@ -65,6 +68,7 @@ void ListView::removeAllRows()
   {
     listWidget->clear();
     count = 0;
+    std::cout << "[ListView] removeAllRows: cleared" << std::endl;
   }
 }
 

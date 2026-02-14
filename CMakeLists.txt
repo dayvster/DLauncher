@@ -59,21 +59,28 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/ui
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/services
-    ${CMAKE_SOURCE_DIR}/src/components
-    ${CMAKE_SOURCE_DIR}/src/utils
-)
+  target_include_directories(${PROJECT_NAME} PRIVATE
+      ${CMAKE_SOURCE_DIR}/src
+      ${CMAKE_SOURCE_DIR}/src/ui
+      ${CMAKE_SOURCE_DIR}/src/core
+      ${CMAKE_SOURCE_DIR}/src/services
+      ${CMAKE_SOURCE_DIR}/src/components
+      ${CMAKE_SOURCE_DIR}/src/utils
+      ${CMAKE_SOURCE_DIR}/src/core
+  )
 
 if(BUILD_TESTS)
+  enable_testing()
   # Test target for menu parser
   add_executable(menu_parser_test test/menu_parser_test.cpp src/utils/menu_parser.cpp)
   target_include_directories(menu_parser_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
   target_link_libraries(menu_parser_test PRIVATE Qt6::Widgets)
   add_test(NAME menu_parser_test COMMAND menu_parser_test)
+
+  add_executable(discovery_test test/discovery_test.cpp src/core/apps/readApps.cpp src/core/intern.cpp src/utils/utils.cpp)
+  target_include_directories(discovery_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+  target_link_libraries(discovery_test PRIVATE Qt6::Widgets)
+  add_test(NAME discovery_test COMMAND discovery_test)
 endif()
 
 if(ENABLE_STRICT_WARNINGS)
