@@ -11,6 +11,8 @@
 #include "utils/utils.h"
 #include "utils/debug.h"
 #include "utils/json.hpp"
+#include "core/xdg.h"
+#include "core/frequency_store.h"
 #include <QApplication>
 #include <QIcon>
 #include <QLabel>
@@ -31,14 +33,12 @@ Qt::WindowFlags devFlags()
 
 int main(int argc, char *argv[])
 {
-  std::string configDir = std::string(getenv("HOME")) + "/.config";
-  std::string freqPath = configDir + "/dlauncher_freq.txt";
-  std::filesystem::create_directories(configDir);
-  {
-    std::ofstream f(freqPath, std::ios::app);
-    f.close();
-  }
-  std::map<std::string, int> appFrequency = json_util::load_freq(freqPath);
+  // Use XDG helpers and FrequencyStore
+  std::string freqPath = xdg::configPath("dlauncher_freq.txt").string();
+  // ensure dir exists
+  xdg::ensureDir(xdg::configPath(""));
+  // frequency store
+  FrequencyStore freqStore(freqPath);
 
   Debug::log("Debug run string: " + Debug::generateRandomString());
   AppReader appReader;
@@ -198,9 +198,9 @@ int main(int argc, char *argv[])
     list->listWidget->clear();
     if (search.empty()) {
       std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
-      std::sort(allApps.begin(), allApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
-        int fa = appFrequency[a.exec];
-        int fb = appFrequency[b.exec];
+    std::sort(allApps.begin(), allApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
+        int fa = freqStore.get(a.exec);
+        int fb = freqStore.get(b.exec);
         if (fa == fb) {
           return a.name < b.name;
         }
@@ -222,8 +222,8 @@ int main(int argc, char *argv[])
     }
 
     std::sort(filteredApps.begin(), filteredApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
-      int fa = appFrequency[a.exec];
-      int fb = appFrequency[b.exec];
+      int fa = freqStore.get(a.exec);
+      int fb = freqStore.get(b.exec);
       if (fa == fb) {
         return a.name < b.name;
       }
@@ -254,8 +254,8 @@ int main(int argc, char *argv[])
         std::cout << "Launching: " << program.toStdString();
         for (const auto &arg : args) std::cout << " " << arg.toStdString();
         std::cout << std::endl;
-        appFrequency[appRow->app.exec]++;
-        json_util::save_freq(freqPath, appFrequency);
+        freqStore.inc(appRow->app.exec);
+        freqStore.save();
         if (envAssignments.isEmpty()) {
           QProcess::startDetached(program, args);
         } else {
