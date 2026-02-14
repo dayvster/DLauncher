@@ -7,22 +7,14 @@
 LockedLineEdit::LockedLineEdit(QWidget *parent, QListWidget *list)
     : QLineEdit(parent), listWidget(list) {}
 
-<<<<<<< HEAD
-void LockedLineEdit::focusOutEvent(QFocusEvent *event){
-=======
 void LockedLineEdit::focusOutEvent(QFocusEvent *event)
 {
->>>>>>> origin/main
   this->setFocus();
   QLineEdit::focusOutEvent(event);
 }
 
-<<<<<<< HEAD
-void LockedLineEdit::keyPressEvent(QKeyEvent *event) {
-=======
 void LockedLineEdit::keyPressEvent(QKeyEvent *event)
 {
->>>>>>> origin/main
   if (!listWidget || listWidget->count() == 0)
   {
     QLineEdit::keyPressEvent(event);
@@ -59,10 +51,6 @@ void LockedLineEdit::keyPressEvent(QKeyEvent *event)
     break;
 
   default:
-<<<<<<< HEAD
-    QLineEdit::keyPressEvent(event);
-=======
     QLineEdit::keyPressEvent(event); // normal typing
->>>>>>> origin/main
   }
 }

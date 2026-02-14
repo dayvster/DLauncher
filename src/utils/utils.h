@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-<<<<<<< HEAD
 // Returns: program, arguments, and a list of env assignments (e.g. "KEY=VAL") to apply.
 // Optional parameters allow expanding .desktop placeholders:
 // - fileArgs: files/URLs to expand for %f/%F/%u/%U
@@ -18,9 +17,6 @@ std::tuple<QString, QStringList, QStringList> parseExecCommand(
     const QString &appName = QString(),
     const QString &iconName = QString(),
     const QString &desktopFilePath = QString());
-=======
-std::pair<QString, QStringList> parseExecCommand(const QString &exec);
->>>>>>> origin/main
 std::vector<std::string> toStringArray(const std::string &content,
                                        const std::string &delimiter = "\n");
 
@@ -46,8 +42,4 @@ enum class PathType
   Directory = 2
 };
 
-<<<<<<< HEAD
 PathType detectPathType(const std::string &search);
-=======
-PathType detectPathType(const std::string &search);
->>>>>>> origin/main
