@@ -28,6 +28,8 @@ static void ensureCacheDir()
 
 void AppReader::LoadApps(bool includeHidden)
 {
+    // Ensure cache directory exists before attempting to read cache
+    ensureCacheDir();
 
     const char* home = getenv("HOME");
     std::string homeStr = home ? std::string(home) : std::string();
@@ -65,7 +67,7 @@ void AppReader::LoadApps(bool includeHidden)
             app.hidden = (parts[5] == "1");
             std::string cats = json_util::percent_decode(parts[6]);
             if (!cats.empty()) app.categories = toStringArray(cats, ";");
-            allAps.push_back(app);
+            allApps.push_back(app);
           }
           return;
         }
@@ -94,7 +96,7 @@ void AppReader::LoadApps(bool includeHidden)
           continue;
         if (seenNames.find(key_name) == seenNames.end())
         {
-          allAps.push_back(app);
+          allApps.push_back(app);
           seenNames.insert(key_name);
         }
       }
@@ -107,13 +109,99 @@ void AppReader::LoadApps(bool includeHidden)
   }
 }
 
+void AppReader::DumpAndPrint(bool includeHidden)
+{
+  const char* home = getenv("HOME");
+  std::string homeStr = home ? std::string(home) : std::string();
+  std::vector<std::string> priorityDirs = {
+      homeStr + "/.local/share/applications",
+      "/usr/local/share/applications",
+      "/usr/share/applications"};
+
+  for (const auto &appDir : priorityDirs)
+  {
+    if (!std::filesystem::exists(appDir))
+      continue;
+    try
+    {
+      for (const auto &entry : std::filesystem::directory_iterator(appDir))
+      {
+        if (entry.path().extension() != ".desktop")
+          continue;
+        DesktopApp app = parseDesktopApp(entry.path());
+        bool skipped = false;
+        std::string reason;
+        if (!includeHidden && app.noDisplay)
+        {
+          skipped = true;
+          reason = "NoDisplay";
+        }
+        else if (!includeHidden && app.hidden)
+        {
+          skipped = true;
+          reason = "Hidden";
+        }
+        if (skipped)
+        {
+          std::cout << entry.path().string() << "\tSKIPPED\t" << reason << std::endl;
+        }
+        else
+        {
+          std::cout << entry.path().string() << "\tINCLUDED\t" << app.name << std::endl;
+        }
+      }
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+      std::cerr << "Filesystem error: " << e.what() << std::endl;
+      continue;
+    }
+  }
+  // After scanning from disk, persist to cache for faster startup next time
+    if (useCache)
+    {
+      try {
+      SaveCache();
+      } catch(...) {}
+    }
+}
+
+void AppReader::SaveCache()
+{
+  try {
+    std::filesystem::path p = cachePath();
+    std::filesystem::create_directories(p.parent_path());
+    std::ofstream f(p, std::ios::trunc);
+    for (const auto &app : allApps)
+    {
+      std::string name = json_util::percent_encode(app.name);
+      std::string exec = json_util::percent_encode(app.exec);
+      std::string icon = app.icon ? json_util::percent_encode(*app.icon) : std::string();
+      std::string comment = app.comment ? json_util::percent_encode(*app.comment) : std::string();
+      std::string noDisplay = app.noDisplay ? "1" : "0";
+      std::string hidden = app.hidden ? "1" : "0";
+      std::string cats;
+      if (!app.categories.empty()) {
+        std::ostringstream oss;
+        for (size_t i = 0; i < app.categories.size(); ++i) {
+          if (i) oss << ";";
+          oss << app.categories[i];
+        }
+        cats = json_util::percent_encode(oss.str());
+      }
+      f << name << "\t" << exec << "\t" << icon << "\t" << comment << "\t" << noDisplay << "\t" << hidden << "\t" << cats << "\n";
+    }
+    f.close();
+  } catch(...) {}
+}
+
 std::vector<DesktopApp>
 AppReader::ReadDesktopApps(int limit, const std::string &searchTerm)
 {
   std::vector<DesktopApp> filtered;
   std::string searchLower = toLower(searchTerm);
 
-  for (const auto &app : allAps)
+  for (const auto &app : allApps)
   {
     if (searchTerm.empty() ||
         toLower(app.name).find(searchLower) != std::string::npos)
@@ -130,7 +218,7 @@ AppReader::ReadDesktopApps(int limit, const std::string &searchTerm)
   return filtered;
 }
 
-std::vector<DesktopApp> AppReader::GetAllApps() { return allAps; }
+std::vector<DesktopApp> AppReader::GetAllApps() { return allApps; }
 
 std::vector<DesktopApp> AppReader::SearchApps(std::string searchTerm, int limit,
                                               bool isFuzzy)
@@ -141,7 +229,7 @@ std::vector<DesktopApp> AppReader::SearchApps(std::string searchTerm, int limit,
   if (isFuzzy)
   {
     std::set<std::pair<std::string, std::string>> seen;
-    for (const auto &app : allAps)
+    for (const auto &app : allApps)
     {
       std::string appNameLower = toLower(app.name);
       appNameLower.erase(remove_if(appNameLower.begin(), appNameLower.end(), ::isspace), appNameLower.end());
@@ -252,6 +340,18 @@ DesktopApp AppReader::parseDesktopApp(const std::filesystem::path &path)
       std::string v = toLower(value);
       result.hidden = (v == "true" || v == "1");
     }
+  }
+  // If name is empty, fall back to desktop filename (without extension)
+  if (result.name.empty())
+  {
+    try {
+      std::string fname = path.filename().string();
+      if (!fname.empty()) {
+        auto pos = fname.rfind('.');
+        if (pos != std::string::npos) fname = fname.substr(0, pos);
+        result.name = fname;
+      }
+    } catch (...) {}
   }
 
   return result;

@@ -23,6 +23,11 @@ public:
 
   // includeHidden: if true, do not skip entries marked NoDisplay or Hidden
   void LoadApps(bool includeHidden = false);
+  // Dump scan diagnostics to stdout: for each .desktop file print path and
+  // whether it was included or skipped (with reason). Useful for --dump CLI.
+  void DumpAndPrint(bool includeHidden = false);
+  // Save currently loaded apps to the on-disk cache (creates directories as needed)
+  void SaveCache();
 
   std::vector<DesktopApp> ReadDesktopApps(int limit = -1,
                                           const std::string &searchTerm = "");
@@ -47,6 +52,6 @@ private:
       "/var/lib/flatpak/applications",
       "/var/lib/flatpak/exports/share/applications"};
 
-  std::vector<DesktopApp> allAps;
+  std::vector<DesktopApp> allApps;
   bool useCache = true;
 };
