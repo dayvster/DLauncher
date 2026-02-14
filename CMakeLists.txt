@@ -35,25 +35,29 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_BINARY_DIR}/.*")
 list(FILTER HEADERS EXCLUDE REGEX "${CMAKE_BINARY_DIR}/.*")
 
+# Exclude old/duplicate UI source trees to avoid duplicate definitions
+list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/components/.*")
+list(FILTER HEADERS EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/components/.*")
+# Exclude duplicate top-level listeners (we use src/core/listeners)
+list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/listeners/.*")
+list(FILTER HEADERS EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/listeners/.*")
+# Exclude legacy apps folder (core/apps contains the authoritative implementation)
+list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/apps/.*")
+list(FILTER HEADERS EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/apps/.*")
+
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-<<<<<<< HEAD
     ${CMAKE_SOURCE_DIR}/src/ui
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/services
+    ${CMAKE_SOURCE_DIR}/src/components
     ${CMAKE_SOURCE_DIR}/src/utils
 )
 
 # Test target for menu parser
 add_executable(menu_parser_test test/menu_parser_test.cpp src/utils/menu_parser.cpp)
 target_include_directories(menu_parser_test PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
-=======
-    ${CMAKE_SOURCE_DIR}/src/components
-    ${CMAKE_SOURCE_DIR}/src/utils
-)
-
->>>>>>> origin/main
