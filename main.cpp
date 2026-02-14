@@ -2,15 +2,15 @@
 #include <filesystem>
 
 #include "LockedLineEdit.h"
-#include "src/ui/components/list.h"
-#include "src/core/listeners/kb.h"
-#include "src/ui/components/appRow.h"
-#include "src/core/apps/readApps.h"
+#include "ui/components/list.h"
+#include "core/listeners/kb.h"
+#include "ui/components/appRow.h"
+#include "core/apps/readApps.h"
 #include "utils.h"
-#include "src/theme/theme.h"
-#include "src/utils/utils.h"
-#include "src/utils/debug.h"
-#include "src/utils/json.hpp"
+#include "theme/theme.h"
+#include "utils/utils.h"
+#include "utils/debug.h"
+#include "utils/json.hpp"
 #include <QApplication>
 #include <QIcon>
 #include <QLabel>
