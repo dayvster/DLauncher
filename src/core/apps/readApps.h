@@ -19,6 +19,8 @@ struct DesktopApp
   bool noDisplay = false;
   bool hidden = false;
   std::vector<std::string> categories;
+  std::vector<std::string> onlyShowIn;
+  std::vector<std::string> notShowIn;
 };
 
 class AppReader
@@ -28,10 +30,11 @@ public:
   ~AppReader();
 
   // includeHidden: if true, do not skip entries marked NoDisplay or Hidden
-  void LoadApps(bool includeHidden = false);
+  // showSystem: if false (default) hide system/config apps; use --show-system to reveal them
+  void LoadApps(bool includeHidden = false, bool showSystem = false);
   // Dump scan diagnostics to stdout: for each .desktop file print path and
   // whether it was included or skipped (with reason). Useful for --dump CLI.
-  void DumpAndPrint(bool includeHidden = false);
+  void DumpAndPrint(bool includeHidden = false, bool showSystem = false);
   // Save currently loaded apps to the on-disk cache (creates directories as needed)
   void SaveCache();
 
@@ -44,11 +47,13 @@ public:
   // Cache management: Load apps from cache when possible to speed startup.
   // Cache is stored in XDG cache dir (or ~/.cache) as 'dlauncher/apps.cache'.
   void SetCacheEnabled(bool enabled) { useCache = enabled; }
+  // Allow tests to override scan paths (default list below)
+  void SetDesktopAppPaths(const std::vector<std::string> &paths) { desktopAppPaths = paths; }
 
 private:
   DesktopApp parseDesktopApp(const std::filesystem::path &path);
 
-  const std::vector<std::string> desktopAppPaths = {
+  std::vector<std::string> desktopAppPaths = {
       "/usr/share/applications",
       "/usr/local/share/applications",
       "~/.local/share/applications",
