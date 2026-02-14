@@ -1,0 +1,3 @@
+Open Editor::gedit
+List Files|/bin/ls -l
+Echo Hello	/bin/echo Hello
