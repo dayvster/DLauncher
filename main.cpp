@@ -52,6 +52,9 @@ int main(int argc, char *argv[])
   bool dumpMode = false;
   bool menuMode = false;
   bool showSystem = false;
+  std::string debugAppPattern;
+  bool rebuildCache = false;
+  bool dumpInMem = false;
   std::vector<std::pair<std::string, std::string>> menuItems; // label, command
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
@@ -59,6 +62,10 @@ int main(int argc, char *argv[])
     else if (arg == "--show-system") showSystem = true;
     else if (arg == "--dump") {
       // Diagnostic mode: print each .desktop path and whether it would be included
+      dumpMode = true;
+    }
+    else if (arg == "--debug-app" && i + 1 < argc) {
+      debugAppPattern = argv[++i];
       dumpMode = true;
     }
     else if (arg == "--menu-file" && i + 1 < argc) {
@@ -105,18 +112,53 @@ int main(int argc, char *argv[])
       }
       if (!label.empty() && !cmd.empty()) menuItems.emplace_back(label, cmd);
     }
+    else if (arg == "--rebuild-cache") {
+      rebuildCache = true;
+    }
+    else if (arg == "--dump-inmem") {
+      dumpInMem = true;
+    }
   }
+  // If rebuildCache is set, disable cache reads so we force a fresh rescan
+  appReader.SetCacheEnabled(!rebuildCache);
   appReader.LoadApps(includeHidden, showSystem);
+  std::cout << "[DEBUG] Loaded apps (count) = " << appReader.GetAllApps().size() << std::endl;
 
   if (dumpMode) {
-    // Print diagnostics and exit
-    appReader.DumpAndPrint(includeHidden, showSystem);
+    // Print diagnostics and exit. If debugAppPattern is set only matching lines are printed.
+    appReader.DumpAndPrint(includeHidden, showSystem, debugAppPattern);
+
+    // Also inspect the in-memory app list we loaded and print any matches so we
+    // can compare disk scan (DumpAndPrint) vs in-memory filtering.
+    if (!debugAppPattern.empty()) {
+      std::string pat = toLower(debugAppPattern);
+      const auto &all = appReader.GetAllApps();
+      for (size_t i = 0; i < all.size(); ++i) {
+        const auto &a = all[i];
+        std::string line = a.name + "\t" + a.exec;
+        std::string low = toLower(line);
+        if (low.find(pat) != std::string::npos) {
+          std::cout << "[IN-MEM] index=" << i << "\t" << a.name << "\t" << a.exec << "\tNoDisplay=" << (a.noDisplay?"1":"0") << "\tHidden=" << (a.hidden?"1":"0") << std::endl;
+        }
+      }
+    }
+
     return 0;
   }
 
-  if (dumpMode) {
-    // Print diagnostics and exit
-    appReader.DumpAndPrint(includeHidden);
+  if (rebuildCache) {
+    // Persist the freshly scanned apps to cache and exit
+    appReader.SaveCache();
+    std::cout << "Rebuilt cache (XDG_CACHE_HOME or ~/.cache/dlauncher/apps.cache)." << std::endl;
+    return 0;
+  }
+
+  if (dumpInMem) {
+    const auto &all = appReader.GetAllApps();
+    for (size_t i = 0; i < all.size(); ++i) {
+      const auto &a = all[i];
+      std::cout << "INMEM\t" << i << "\t" << a.name << "\t" << a.exec << "\tNoDisplay=" << (a.noDisplay?"1":"0") << "\tHidden=" << (a.hidden?"1":"0") << std::endl;
+    }
     return 0;
   }
 

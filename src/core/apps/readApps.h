@@ -34,7 +34,8 @@ public:
   void LoadApps(bool includeHidden = false, bool showSystem = false);
   // Dump scan diagnostics to stdout: for each .desktop file print path and
   // whether it was included or skipped (with reason). Useful for --dump CLI.
-  void DumpAndPrint(bool includeHidden = false, bool showSystem = false);
+  // If pattern is non-empty, only print lines that match the case-insensitive pattern
+  void DumpAndPrint(bool includeHidden = false, bool showSystem = false, const std::string &pattern = "");
   // Save currently loaded apps to the on-disk cache (creates directories as needed)
   void SaveCache();
 
@@ -61,7 +62,9 @@ private:
       "/var/lib/flatpak/exports/share/applications",
       "/var/lib/snapd/desktop/applications",
       "/var/lib/flatpak/applications",
-      "/var/lib/flatpak/exports/share/applications"};
+      "/var/lib/flatpak/exports/share/applications",
+      "/run/host/var/lib/flatpak/exports/share/applications",
+      "/run/host/var/lib/snapd/desktop/applications"};
 
   std::vector<DesktopApp> allApps;
   bool useCache = true;
