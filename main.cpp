@@ -1,4 +1,5 @@
 #include <fstream>
+<<<<<<< HEAD
 #include <filesystem>
 
 #include "LockedLineEdit.h"
@@ -8,6 +9,16 @@
 #include "src/core/apps/readApps.h"
 #include "utils.h"
 #include "src/theme/theme.h"
+=======
+
+#include "LockedLineEdit.h"
+#include "list/list.h"
+#include "listeners/kb.h"
+#include "src/components/appRow/appRow.h"
+#include "src/utils/readApps.h"
+#include "utils.h"
+#include "src/utils/theme.h"
+>>>>>>> origin/main
 #include <QApplication>
 #include <QIcon>
 #include <QLabel>
@@ -21,8 +32,11 @@
 #include <qsizepolicy.h>
 #include "src/utils/utils.h"
 #include "src/utils/debug.h"
+<<<<<<< HEAD
 #include "src/utils/json.hpp"
 #include <QRegularExpression>
+=======
+>>>>>>> origin/main
 
 Qt::WindowFlags devFlags()
 {
@@ -30,21 +44,57 @@ Qt::WindowFlags devFlags()
 }
 
 int main(int argc, char *argv[])
+<<<<<<< HEAD
 {
   std::string configDir = std::string(getenv("HOME")) + "/.config";
   std::string freqPath = configDir + "/dlauncher_freq.txt";
   std::filesystem::create_directories(configDir);
+=======
+// ...existing code...
+{
+  // Frequency map: app exec string -> launch count (persistent)
+  std::string configDir = std::string(getenv("HOME")) + "/.config";
+  std::string freqPath = configDir + "/dlauncher_freq.txt";
+  // Ensure config dir exists
+  std::filesystem::create_directories(configDir);
+  // Ensure file exists and is readable/writable
+>>>>>>> origin/main
   {
     std::ofstream f(freqPath, std::ios::app);
     f.close();
   }
+<<<<<<< HEAD
   std::map<std::string, int> appFrequency = json_util::load_freq(freqPath);
+=======
+  std::map<std::string, int> appFrequency;
+  {
+    std::ifstream f(freqPath);
+    std::string line;
+    while (std::getline(f, line))
+    {
+      auto pos = line.find(':');
+      if (pos != std::string::npos)
+      {
+        std::string key = line.substr(0, pos);
+        try
+        {
+          int val = std::stoi(line.substr(pos + 1));
+          appFrequency[key] = val;
+        }
+        catch (...)
+        {
+        }
+      }
+    }
+  }
+>>>>>>> origin/main
   Debug::log("Debug run string: " + Debug::generateRandomString());
   AppReader appReader;
   QApplication app(argc, argv);
   ThemeManager themeManager;
   const Theme &theme = themeManager.currentTheme();
   GlobalEventListener globalKbListener(app);
+<<<<<<< HEAD
 
   // By default don't include NoDisplay/Hidden entries; allow override via CLI flag
   // New flag: --include-hidden (accept --show-hidden for backward compatibility)
@@ -106,6 +156,20 @@ int main(int argc, char *argv[])
   globalKbListener.registerKeyCallback(Qt::Key_Escape, [&]() {
     app.quit();
   });
+=======
+  QProcess *process = new QProcess();
+
+  appReader.LoadApps();
+
+  std::string searchTerm = "";
+
+  globalKbListener.registerKeyCallback(Qt::Key_Escape, [&]()
+                                       {
+    std::cout << "Escape key pressed, exiting..." << std::endl;
+    app.quit();
+    exit(0);
+    return 0; });
+>>>>>>> origin/main
 
   QWidget window;
   window.setWindowFlags(devFlags());
@@ -115,6 +179,10 @@ int main(int argc, char *argv[])
   pal.setColor(QPalette::Window, theme.backgroundColor);
   window.setPalette(pal);
   window.setAutoFillBackground(true);
+<<<<<<< HEAD
+=======
+  // Set window position if specified, otherwise center
+>>>>>>> origin/main
   if (theme.windowPosX >= 0 && theme.windowPosY >= 0)
   {
     window.move(theme.windowPosX, theme.windowPosY);
@@ -152,6 +220,7 @@ int main(int argc, char *argv[])
 
   layout->addWidget(input);
 
+<<<<<<< HEAD
   std::vector<DesktopApp> allApps;
   if (menuMode) {
     for (auto &p : menuItems) {
@@ -168,6 +237,16 @@ int main(int argc, char *argv[])
     list->addRow(new AppRow(list, app));
   }
   
+=======
+  std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
+
+  for (const auto &app : allApps)
+  {
+    list->addRow(new AppRow(list, app));
+  }
+  // Optionally, you can pass theme to AppRow for per-row theming if needed
+
+>>>>>>> origin/main
   QObject::connect(list->listWidget, &QListWidget::currentRowChanged, [&](int row)
                    {
     if (row >= 0 && row < list->listWidget->count()) {
@@ -190,8 +269,15 @@ int main(int argc, char *argv[])
         int fa = appFrequency[a.exec];
         int fb = appFrequency[b.exec];
         if (fa == fb) {
+<<<<<<< HEAD
           return a.name < b.name;
         }
+=======
+          // Alphabetical tiebreaker
+          return a.name < b.name;
+        }
+        // Zero frequency always at the bottom
+>>>>>>> origin/main
         if (fa == 0) return false;
         if (fb == 0) return true;
         return fa > fb;
@@ -202,12 +288,20 @@ int main(int argc, char *argv[])
       return;
     }
 
+<<<<<<< HEAD
+=======
+    // Only app search: fuzzy match apps
+>>>>>>> origin/main
     std::vector<DesktopApp> filteredApps;
     for (const auto &app : appReader.GetAllApps()) {
       if (similarity(search, app.name) > 0.5 || contains(app.name, search, false) != std::string::npos) {
         filteredApps.push_back(app);
       }
     }
+<<<<<<< HEAD
+=======
+    // Sort by frequency (most-run first)
+>>>>>>> origin/main
     std::sort(filteredApps.begin(), filteredApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
       int fa = appFrequency[a.exec];
       int fb = appFrequency[b.exec];
@@ -229,6 +323,7 @@ int main(int argc, char *argv[])
       QListWidgetItem *item = list->listWidget->item(row);
       AppRow *appRow = dynamic_cast<AppRow *>(list->listWidget->itemWidget(item));
       if (appRow) {
+<<<<<<< HEAD
         // Sanitize Exec field: remove desktop entry field codes like %f, %F, %u, %U, %i, %c, %k, etc.
         QString rawExec = QString::fromStdString(appRow->app.exec);
         rawExec.replace("%%", "%");
@@ -237,10 +332,14 @@ int main(int argc, char *argv[])
         QString cleanedExec = rawExec;
         cleanedExec.remove(fieldCode);
         auto [program, args, envAssignments] = parseExecCommand(cleanedExec);
+=======
+        auto [program, args] = parseExecCommand(QString::fromStdString(appRow->app.exec));
+>>>>>>> origin/main
         if (program.isEmpty()) return;
         std::cout << "Launching: " << program.toStdString();
         for (const auto &arg : args) std::cout << " " << arg.toStdString();
         std::cout << std::endl;
+<<<<<<< HEAD
         appFrequency[appRow->app.exec]++;
         json_util::save_freq(freqPath, appFrequency);
         if (envAssignments.isEmpty()) {
@@ -261,6 +360,20 @@ int main(int argc, char *argv[])
           p->start(program, args);
           p->setParent(nullptr);
         }
+=======
+  // Increment frequency count and persist
+  appFrequency[appRow->app.exec]++;
+  {
+    appFrequency[appRow->app.exec]++;
+    std::ofstream f(freqPath);
+    for (const auto& [key, val] : appFrequency) {
+      if (val > 0) {
+        f << key << ":" << val << "\n";
+      }
+    }
+  }
+  QProcess::startDetached(program, args);
+>>>>>>> origin/main
   app.quit();
       }
     } });

@@ -9,6 +9,7 @@
 #include "utils.h"
 #include <algorithm>
 
+<<<<<<< HEAD
 std::tuple<QString, QStringList, QStringList> parseExecCommand(
     const QString &exec,
     const QStringList &fileArgs,
@@ -73,6 +74,16 @@ std::tuple<QString, QStringList, QStringList> parseExecCommand(
     return {QString(), QStringList(), envAssignments};
   QString program = parts.takeFirst();
   return {program, parts, envAssignments};
+=======
+std::pair<QString, QStringList> parseExecCommand(const QString &exec)
+{
+  QString cleaned = exec;
+  QStringList parts = QProcess::splitCommand(cleaned);
+  if (parts.isEmpty())
+    return {QString(), QStringList()};
+  QString program = parts.takeFirst();
+  return {program, parts};
+>>>>>>> origin/main
 }
 
 std::vector<std::string> toStringArray(const std::string &content,
@@ -234,4 +245,8 @@ PathType detectPathType(const std::string &search)
   if (std::filesystem::is_directory(p))
     return PathType::Directory;
   return PathType::NotAPath;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Build output
 /build/
 
@@ -41,3 +42,6 @@ Makefile
 # Misc
 tags
 compile_commands.json
+=======
+build/*
+>>>>>>> origin/main
