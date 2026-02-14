@@ -14,10 +14,13 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 # Collect sources and headers only from source tree
+# Glob only implementation sources in src; add top-level main.cpp explicitly
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/src/*.cpp
-    ${CMAKE_SOURCE_DIR}/*.cpp
 )
+if(EXISTS ${CMAKE_SOURCE_DIR}/main.cpp)
+  list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/main.cpp)
+endif()
 
 # Remove duplicate sources that may exist in multiple places
 list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/utils/readApps.cpp")
