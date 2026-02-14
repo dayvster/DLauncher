@@ -13,6 +13,9 @@ class AppRow : public QWidget
 public:
   DesktopApp app;
   explicit AppRow(QWidget *parent = nullptr, const DesktopApp &app = DesktopApp());
+  // expose hooks for pin/hide UI
+  void setPinned(bool pinned);
+  void setHiddenFlag(bool hidden);
 
 private:
   const unsigned int ICON_SIZE = 24;

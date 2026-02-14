@@ -90,5 +90,13 @@ AppRow::AppRow(QWidget *parent, const DesktopApp &app) : QWidget(parent), app(ap
 
 	layout->addStretch();
 
-	this->setLayout(layout);
+  this->setLayout(layout);
+}
+
+void AppRow::setPinned(bool /*pinned*/) {
+  // placeholder: visual pin state not yet implemented
+}
+
+void AppRow::setHiddenFlag(bool /*hidden*/) {
+  // placeholder: visual hide state not yet implemented
 }
