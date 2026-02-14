@@ -31,6 +31,13 @@ type(scope): short description
 - test: Adding or correcting tests
 - chore: Maintenance
 
+We also accept these concise aliases/types and encourage their use in commit messages:
+
+- `bugfix:` (alias for `fix:`) — use when clarifying a bug-fix type
+- `type:` — small project-specific type to indicate the change relates to "type" metadata
+
+Preferred top-level types to use: `feat:`, `fix:`/`bugfix:`, `chore:`, `type:`.
+
 **Examples:**
 - `feat(launcher): add frequency-based sorting`
 - `fix(theme): correct color parsing`

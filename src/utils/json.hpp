@@ -82,8 +82,14 @@ inline std::map<std::string, int> load_freq(const std::string &path)
 
 inline void save_freq(const std::string &path, const std::map<std::string, int> &freq)
 {
+  // Ensure parent directory exists
+  std::filesystem::path p(path);
+  std::filesystem::path parent = p.parent_path();
+  if (!parent.empty())
+    std::filesystem::create_directories(parent);
+
   // Write atomically: write to temp file then rename
-  std::filesystem::path tmp = std::filesystem::path(path).parent_path() / (std::filesystem::path(path).filename().string() + ".tmp");
+  std::filesystem::path tmp = parent / (p.filename().string() + ".tmp");
   std::ofstream f(tmp, std::ios::trunc);
   for (const auto &p : freq)
   {
@@ -96,6 +102,7 @@ inline void save_freq(const std::string &path, const std::map<std::string, int> 
   if (ec)
   {
     // best-effort fallback: try overwrite
+    std::filesystem::create_directories(parent);
     std::ofstream f2(path, std::ios::trunc);
     for (const auto &p : freq)
     {
