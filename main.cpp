@@ -114,6 +114,12 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  if (dumpMode) {
+    // Print diagnostics and exit
+    appReader.DumpAndPrint(includeHidden);
+    return 0;
+  }
+
   std::string searchTerm = "";
 
   globalKbListener.registerKeyCallback(Qt::Key_Escape, [&]() {
