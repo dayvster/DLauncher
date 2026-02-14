@@ -18,16 +18,13 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/src/*.cpp
     ${CMAKE_SOURCE_DIR}/*.cpp
 )
-<<<<<<< HEAD
 
-# Exclude test sources from the main executable; we'll build tests separately
-list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/test/.*\\.cpp$")
-# (keep SOURCES as-is; we'll control duplicates by deleting or stubbing originals)
-=======
-# Remove duplicate sources from utils
+# Remove duplicate sources that may exist in multiple places
 list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/utils/readApps.cpp")
 list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/utils/theme.cpp")
->>>>>>> origin/main
+
+# Exclude test sources from the main executable; we'll build tests separately
+list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/test/.*\.cpp$")
 
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/src/*.h
