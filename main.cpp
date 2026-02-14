@@ -164,21 +164,21 @@ int main(int argc, char *argv[])
 
   layout->addWidget(input);
 
-  std::vector<DesktopApp> allApps;
-  if (menuMode) {
-    for (auto &p : menuItems) {
-      DesktopApp a;
-      a.name = p.first;
-      a.exec = p.second;
-      allApps.push_back(a);
+    // Create rows lazily from pointers into the canonical app list
+    if (menuMode) {
+      for (auto &p : menuItems) {
+        DesktopApp a;
+        a.name = p.first;
+        a.exec = p.second;
+        list->addRow(new AppRow(list, a));
+      }
+    } else {
+      auto &master = appReader.GetAllApps();
+      size_t count = master.size();
+      for (size_t i = 0; i < count && i < 64; ++i) {
+        list->addRow(new AppRow(list, master[i]));
+      }
     }
-  } else {
-    allApps = appReader.ReadDesktopApps(64, "");
-  }
-
-  for (const auto &app : allApps) {
-    list->addRow(new AppRow(list, app));
-  }
 
   QObject::connect(list->listWidget, &QListWidget::currentRowChanged, [&](int row)
                    {
@@ -214,25 +214,25 @@ int main(int argc, char *argv[])
       return;
     }
 
-    std::vector<DesktopApp> filteredApps;
+  std::vector<const DesktopApp*> filteredAppsPtrs;
     for (const auto &app : appReader.GetAllApps()) {
       if (similarity(search, app.name) > 0.5 || contains(app.name, search, false) != std::string::npos) {
-        filteredApps.push_back(app);
+        filteredAppsPtrs.push_back(&app);
       }
     }
 
-    std::sort(filteredApps.begin(), filteredApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
-      int fa = freqStore.get(a.exec);
-      int fb = freqStore.get(b.exec);
+    std::sort(filteredAppsPtrs.begin(), filteredAppsPtrs.end(), [&](const DesktopApp *a, const DesktopApp *b) {
+      int fa = freqStore.get(a->exec);
+      int fb = freqStore.get(b->exec);
       if (fa == fb) {
-        return a.name < b.name;
+        return a->name < b->name;
       }
       if (fa == 0) return false;
       if (fb == 0) return true;
       return fa > fb;
     });
-    for (const auto &app : filteredApps) {
-      list->addRow(new AppRow(list, app));
+    for (const auto *appPtr : filteredAppsPtrs) {
+      list->addRow(new AppRow(list, *appPtr));
     } });
 
   QObject::connect(input, &QLineEdit::returnPressed, [&]()

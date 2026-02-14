@@ -10,6 +10,7 @@
 #include "../../utils/json.hpp"
 #include <fstream>
 #include <chrono>
+#include "intern.h"
 
 AppReader::AppReader() = default;
 AppReader::~AppReader() = default;
@@ -67,7 +68,16 @@ void AppReader::LoadApps(bool includeHidden)
             app.hidden = (parts[5] == "1");
             std::string cats = json_util::percent_decode(parts[6]);
             if (!cats.empty()) app.categories = toStringArray(cats, ";");
-            allApps.push_back(app);
+            // Precompute lower-case and exec-normalized values
+            app.name_lc = toLower(app.name);
+            app.exec_lc = toLower(app.exec);
+            size_t pct = app.exec_lc.find('%');
+            if (pct != std::string::npos) app.exec_lc = app.exec_lc.substr(0, pct);
+            // trim spaces
+            app.exec_lc.erase(remove_if(app.exec_lc.begin(), app.exec_lc.end(), ::isspace), app.exec_lc.end());
+            // intern exec string
+            app.exec_intern = intern::intern_string(app.exec);
+            allApps.push_back(std::move(app));
           }
           return;
         }
@@ -90,13 +100,21 @@ void AppReader::LoadApps(bool includeHidden)
         // Skip entries marked NoDisplay or Hidden unless requested
         if (!includeHidden && (app.noDisplay || app.hidden))
           continue;
-        std::string key_name = toLower(app.name);
+        // Precompute normalized keys
+        app.name_lc = toLower(app.name);
+        app.exec_lc = toLower(app.exec);
+        size_t pct = app.exec_lc.find('%');
+        if (pct != std::string::npos) app.exec_lc = app.exec_lc.substr(0, pct);
+        app.exec_lc.erase(remove_if(app.exec_lc.begin(), app.exec_lc.end(), ::isspace), app.exec_lc.end());
+        app.exec_intern = intern::intern_string(app.exec);
+
+        std::string key_name = app.name_lc;
         key_name.erase(remove_if(key_name.begin(), key_name.end(), ::isspace), key_name.end());
         if (key_name.empty())
           continue;
         if (seenNames.find(key_name) == seenNames.end())
         {
-          allApps.push_back(app);
+          allApps.push_back(std::move(app));
           seenNames.insert(key_name);
         }
       }
@@ -218,7 +236,7 @@ AppReader::ReadDesktopApps(int limit, const std::string &searchTerm)
   return filtered;
 }
 
-std::vector<DesktopApp> AppReader::GetAllApps() { return allApps; }
+const std::vector<DesktopApp> &AppReader::GetAllApps() const { return allApps; }
 
 std::vector<DesktopApp> AppReader::SearchApps(std::string searchTerm, int limit,
                                               bool isFuzzy)
