@@ -57,6 +57,9 @@ list(FILTER HEADERS EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/apps/.*")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
+# preferences storage
+list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/src/core/preferences.cpp)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
 
   target_include_directories(${PROJECT_NAME} PRIVATE
