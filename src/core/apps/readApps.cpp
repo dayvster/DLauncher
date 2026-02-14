@@ -10,7 +10,7 @@
 #include "../../utils/json.hpp"
 #include <fstream>
 #include <chrono>
-#include "intern.h"
+#include "core/intern.h"
 
 AppReader::AppReader() = default;
 AppReader::~AppReader() = default;
@@ -27,17 +27,32 @@ static void ensureCacheDir()
   std::filesystem::create_directories(cachePath().parent_path());
 }
 
-void AppReader::LoadApps(bool includeHidden)
+void AppReader::LoadApps(bool includeHidden, bool showSystem)
 {
     // Ensure cache directory exists before attempting to read cache
     ensureCacheDir();
 
     const char* home = getenv("HOME");
     std::string homeStr = home ? std::string(home) : std::string();
-  std::vector<std::string> priorityDirs = {
-      homeStr + "/.local/share/applications",
-      "/usr/local/share/applications",
-      "/usr/share/applications"};
+
+  // Build scan directories from configured desktopAppPaths, expanding '~'
+  std::vector<std::string> priorityDirs;
+  for (const auto &p : desktopAppPaths) {
+    if (!p.empty() && p[0] == '~') {
+      if (!homeStr.empty()) priorityDirs.push_back(homeStr + p.substr(1));
+    } else {
+      priorityDirs.push_back(p);
+    }
+  }
+  // Deduplicate while preserving order
+  {
+    std::set<std::string> seen;
+    std::vector<std::string> dedup;
+    for (auto &d : priorityDirs) {
+      if (seen.insert(d).second) dedup.push_back(d);
+    }
+    priorityDirs.swap(dedup);
+  }
 
   // Attempt to load from cache if enabled and present
   if (useCache)
@@ -51,10 +66,13 @@ void AppReader::LoadApps(bool includeHidden)
         if (f.is_open())
         {
           std::string line;
+          size_t loaded = 0;
           while (std::getline(f, line))
           {
             if (line.empty()) continue;
-            // Format: name\texec\ticon\tcomment\tnoDisplay\thidden\tcategories
+            // Format (backwards compatible):
+            // older: name\texec\ticon\tcomment\tnoDisplay\thidden\tcategories
+            // newer: name\texec\ticon\tcomment\tnoDisplay\thidden\tcategories\tonlyshowin\tnotshowin
             std::vector<std::string> parts = toStringArray(line, "\t");
             if (parts.size() < 7) continue;
             DesktopApp app;
@@ -68,6 +86,12 @@ void AppReader::LoadApps(bool includeHidden)
             app.hidden = (parts[5] == "1");
             std::string cats = json_util::percent_decode(parts[6]);
             if (!cats.empty()) app.categories = toStringArray(cats, ";");
+            if (parts.size() >= 9) {
+              std::string onlysi = json_util::percent_decode(parts[7]);
+              if (!onlysi.empty()) app.onlyShowIn = toStringArray(onlysi, ";");
+              std::string notsi = json_util::percent_decode(parts[8]);
+              if (!notsi.empty()) app.notShowIn = toStringArray(notsi, ";");
+            }
             // Precompute lower-case and exec-normalized values
             app.name_lc = toLower(app.name);
             app.exec_lc = toLower(app.exec);
@@ -77,9 +101,15 @@ void AppReader::LoadApps(bool includeHidden)
             app.exec_lc.erase(remove_if(app.exec_lc.begin(), app.exec_lc.end(), ::isspace), app.exec_lc.end());
             // intern exec string
             app.exec_intern = intern::intern_string(app.exec);
+            // Optionally hide obvious system/config utilities unless showSystem is true
+            std::string nm = toLower(app.name);
+            bool likely_system = (nm.find("settings") != std::string::npos || nm.find("configuration") != std::string::npos || nm.find("system") != std::string::npos || nm.find("bluetooth") != std::string::npos || nm.find("printer") != std::string::npos || nm.find("authentication") != std::string::npos || nm.find("kcm_") != std::string::npos || nm.find("kcm ") != std::string::npos || nm.find("app permissions") != std::string::npos);
+            if (!showSystem && likely_system) continue;
             allApps.push_back(std::move(app));
+            ++loaded;
           }
-          return;
+          // Only use cache if it actually contained apps; otherwise fall through to scanning
+          if (loaded > 0) return;
         }
       }
     }
@@ -92,11 +122,14 @@ void AppReader::LoadApps(bool includeHidden)
       continue;
     try
     {
-        for (const auto &entry : std::filesystem::directory_iterator(appDir))
-        {
-          if (entry.path().extension() != ".desktop")
-            continue;
-        DesktopApp app = parseDesktopApp(entry.path());
+    for (const auto &entry : std::filesystem::directory_iterator(appDir))
+    {
+      if (entry.path().extension() != ".desktop")
+        continue;
+      // Allow symlinked desktop files and follow them
+      std::filesystem::path p = entry.path();
+      try { p = std::filesystem::canonical(entry.path()); } catch(...) {}
+      DesktopApp app = parseDesktopApp(p);
         // Skip entries marked NoDisplay or Hidden unless requested
         if (!includeHidden && (app.noDisplay || app.hidden))
           continue;
@@ -107,6 +140,11 @@ void AppReader::LoadApps(bool includeHidden)
         if (pct != std::string::npos) app.exec_lc = app.exec_lc.substr(0, pct);
         app.exec_lc.erase(remove_if(app.exec_lc.begin(), app.exec_lc.end(), ::isspace), app.exec_lc.end());
         app.exec_intern = intern::intern_string(app.exec);
+
+        // Optionally hide system/config utilities by name
+        std::string nm = toLower(app.name);
+        bool likely_system = (nm.find("settings") != std::string::npos || nm.find("configuration") != std::string::npos || nm.find("system") != std::string::npos || nm.find("bluetooth") != std::string::npos || nm.find("printer") != std::string::npos || nm.find("authentication") != std::string::npos || nm.find("kcm_") != std::string::npos || nm.find("kcm ") != std::string::npos || nm.find("app permissions") != std::string::npos);
+        if (!showSystem && likely_system) continue;
 
         std::string key_name = app.name_lc;
         key_name.erase(remove_if(key_name.begin(), key_name.end(), ::isspace), key_name.end());
@@ -127,7 +165,7 @@ void AppReader::LoadApps(bool includeHidden)
   }
 }
 
-void AppReader::DumpAndPrint(bool includeHidden)
+void AppReader::DumpAndPrint(bool includeHidden, bool showSystem)
 {
   const char* home = getenv("HOME");
   std::string homeStr = home ? std::string(home) : std::string();
@@ -146,7 +184,9 @@ void AppReader::DumpAndPrint(bool includeHidden)
       {
         if (entry.path().extension() != ".desktop")
           continue;
-        DesktopApp app = parseDesktopApp(entry.path());
+        std::filesystem::path p = entry.path();
+        try { p = std::filesystem::canonical(entry.path()); } catch(...) {}
+        DesktopApp app = parseDesktopApp(p);
         bool skipped = false;
         std::string reason;
         if (!includeHidden && app.noDisplay)
@@ -158,6 +198,24 @@ void AppReader::DumpAndPrint(bool includeHidden)
         {
           skipped = true;
           reason = "Hidden";
+        }
+        else if (!includeHidden && !app.onlyShowIn.empty())
+        {
+          skipped = true;
+          reason = "OnlyShowIn";
+        }
+        else if (!includeHidden && !app.notShowIn.empty())
+        {
+          skipped = true;
+          reason = "NotShowIn";
+        }
+        // system/config heuristics
+        std::string nm = toLower(app.name);
+        bool likely_system = (nm.find("settings") != std::string::npos || nm.find("configuration") != std::string::npos || nm.find("system") != std::string::npos || nm.find("bluetooth") != std::string::npos || nm.find("printer") != std::string::npos || nm.find("authentication") != std::string::npos || nm.find("kcm_") != std::string::npos || nm.find("kcm ") != std::string::npos || nm.find("app permissions") != std::string::npos);
+        if (!showSystem && likely_system)
+        {
+          skipped = true;
+          reason = "System";
         }
         if (skipped)
         {
@@ -190,24 +248,42 @@ void AppReader::SaveCache()
     std::filesystem::path p = cachePath();
     std::filesystem::create_directories(p.parent_path());
     std::ofstream f(p, std::ios::trunc);
-    for (const auto &app : allApps)
-    {
-      std::string name = json_util::percent_encode(app.name);
-      std::string exec = json_util::percent_encode(app.exec);
-      std::string icon = app.icon ? json_util::percent_encode(*app.icon) : std::string();
-      std::string comment = app.comment ? json_util::percent_encode(*app.comment) : std::string();
-      std::string noDisplay = app.noDisplay ? "1" : "0";
-      std::string hidden = app.hidden ? "1" : "0";
-      std::string cats;
-      if (!app.categories.empty()) {
-        std::ostringstream oss;
-        for (size_t i = 0; i < app.categories.size(); ++i) {
-          if (i) oss << ";";
-          oss << app.categories[i];
+      for (const auto &app : allApps)
+      {
+        std::string name = json_util::percent_encode(app.name);
+        std::string exec = json_util::percent_encode(app.exec);
+        std::string icon = app.icon ? json_util::percent_encode(*app.icon) : std::string();
+        std::string comment = app.comment ? json_util::percent_encode(*app.comment) : std::string();
+        std::string noDisplay = app.noDisplay ? "1" : "0";
+        std::string hidden = app.hidden ? "1" : "0";
+        std::string cats;
+        if (!app.categories.empty()) {
+          std::ostringstream oss;
+          for (size_t i = 0; i < app.categories.size(); ++i) {
+            if (i) oss << ";";
+            oss << app.categories[i];
+          }
+          cats = json_util::percent_encode(oss.str());
         }
-        cats = json_util::percent_encode(oss.str());
-      }
-      f << name << "\t" << exec << "\t" << icon << "\t" << comment << "\t" << noDisplay << "\t" << hidden << "\t" << cats << "\n";
+        std::string onlysi;
+        if (!app.onlyShowIn.empty()) {
+          std::ostringstream oss2;
+          for (size_t i = 0; i < app.onlyShowIn.size(); ++i) {
+            if (i) oss2 << ";";
+            oss2 << app.onlyShowIn[i];
+          }
+          onlysi = json_util::percent_encode(oss2.str());
+        }
+        std::string notsi;
+        if (!app.notShowIn.empty()) {
+          std::ostringstream oss3;
+          for (size_t i = 0; i < app.notShowIn.size(); ++i) {
+            if (i) oss3 << ";";
+            oss3 << app.notShowIn[i];
+          }
+          notsi = json_util::percent_encode(oss3.str());
+        }
+        f << name << "\t" << exec << "\t" << icon << "\t" << comment << "\t" << noDisplay << "\t" << hidden << "\t" << cats << "\t" << onlysi << "\t" << notsi << "\n";
     }
     f.close();
   } catch(...) {}
@@ -347,6 +423,14 @@ DesktopApp AppReader::parseDesktopApp(const std::filesystem::path &path)
     else if (argLower == "categories")
     {
       result.categories = toStringArray(value, ";");
+    }
+    else if (argLower == "onlyshowin")
+    {
+      result.onlyShowIn = toStringArray(value, ";");
+    }
+    else if (argLower == "notshowin")
+    {
+      result.notShowIn = toStringArray(value, ";");
     }
     else if (argLower == "nodisplay")
     {

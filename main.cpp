@@ -47,14 +47,16 @@ int main(int argc, char *argv[])
   const Theme &theme = themeManager.currentTheme();
   GlobalEventListener globalKbListener(app);
 
-  // By default don't include NoDisplay/Hidden entries; allow override via CLI flag
+  // By default include all .desktop entries (don't skip NoDisplay/Hidden/OnlyShowIn)
   bool includeHidden = false;
   bool dumpMode = false;
   bool menuMode = false;
+  bool showSystem = false;
   std::vector<std::pair<std::string, std::string>> menuItems; // label, command
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
     if (arg == "--include-hidden" || arg == "--show-hidden") includeHidden = true;
+    else if (arg == "--show-system") showSystem = true;
     else if (arg == "--dump") {
       // Diagnostic mode: print each .desktop path and whether it would be included
       dumpMode = true;
@@ -104,11 +106,11 @@ int main(int argc, char *argv[])
       if (!label.empty() && !cmd.empty()) menuItems.emplace_back(label, cmd);
     }
   }
-  appReader.LoadApps(includeHidden);
+  appReader.LoadApps(includeHidden, showSystem);
 
   if (dumpMode) {
     // Print diagnostics and exit
-    appReader.DumpAndPrint(includeHidden);
+    appReader.DumpAndPrint(includeHidden, showSystem);
     return 0;
   }
 
@@ -284,6 +286,16 @@ int main(int argc, char *argv[])
   window.move(x, y);
 
   window.show();
+
+  // Safety: ensure initial rows are populated (some environments/layout timing
+  // issues can leave the list empty). If list is empty, populate from master.
+  if (!menuMode && list->listWidget->count() == 0) {
+    auto &master = appReader.GetAllApps();
+    size_t count = master.size();
+    for (size_t i = 0; i < count && i < 64; ++i) {
+      list->addRow(new AppRow(list, master[i]));
+    }
+  }
 
   return app.exec();
 }
