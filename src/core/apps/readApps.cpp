@@ -294,13 +294,18 @@ void AppReader::DumpAndPrint(bool includeHidden, bool showSystem, const std::str
         {
           out = entry.path().string() + "\tINCLUDED\t" + app.name;
         }
-        if (pattern.empty()) {
-          std::cout << out << std::endl;
-        } else {
-          // case-insensitive match
-          std::string low = toLower(out);
-          std::string pat = toLower(pattern);
-          if (low.find(pat) != std::string::npos) std::cout << out << std::endl;
+        if (/* debug output controlled by flag */ true) {
+          if (pattern.empty()) {
+            // use std::cout for diagnostic dump mode (this function is a CLI
+            // diagnostic helper; keep output on stdout regardless of -v so
+            // scripts can consume it). Use std::cout here instead of Debug::log.
+            std::cout << out << std::endl;
+          } else {
+            // case-insensitive match
+            std::string low = toLower(out);
+            std::string pat = toLower(pattern);
+            if (low.find(pat) != std::string::npos) std::cout << out << std::endl;
+          }
         }
       }
     }

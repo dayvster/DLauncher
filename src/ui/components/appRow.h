@@ -5,6 +5,8 @@
 #include "core/apps/readApps.h"
 #include <QLabel>
 #include <QWidget>
+#include <QPushButton>
+#include "../../core/preferences.h"
 
 class AppRow : public QWidget
 {
@@ -12,10 +14,10 @@ class AppRow : public QWidget
 
 public:
   DesktopApp app;
-  explicit AppRow(QWidget *parent = nullptr, const DesktopApp &app = DesktopApp());
-  // expose hooks for pin/hide UI
-  void setPinned(bool pinned);
-  void setHiddenFlag(bool hidden);
+  explicit AppRow(QWidget *parent = nullptr, const DesktopApp &app = DesktopApp(), prefs::Preferences *prefs = nullptr);
+  // Pin/hide hooks removed — UI no longer exposes these actions
+  void setPinned(bool /*pinned*/) {}
+  void setHiddenFlag(bool /*hidden*/) {}
 
 private:
   const unsigned int ICON_SIZE = 24;
@@ -24,6 +26,7 @@ private:
   static const QString rowStyle;
   static const QString iconStyle;
   static const QString nameStyleTemplate;
+  // buttons removed
 };
 
 #endif

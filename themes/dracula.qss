@@ -1,0 +1,5 @@
+/* Dracula theme */
+QWidget { background: #282a36; color: #f8f8f2; font-family: "FiraCode"; }
+QLineEdit { background: #44475a; color: #f8f8f2; border: 2px solid #6272a4; border-radius: 8px; padding: 6px; }
+QWidget#AppRow { background: rgba(68,71,90,0.78); border-radius: 8px; padding: 6px; }
+QListWidget::item:selected { background: #bd93f9; }

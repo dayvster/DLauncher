@@ -1,0 +1,11 @@
+/* Dark built-in theme */
+QWidget { background: rgba(30,30,30,0.86); color: rgba(255,255,255,1); font-family: "FiraCode"; }
+QListWidget#AppListWidget, QListWidget { background: transparent; color: rgba(255,255,255,1); border: none; }
+QLineEdit { background: rgba(34,34,34,1); color: rgba(255,255,255,1); border: 2px solid rgba(68,68,68,1); border-radius: 10px; padding: 6px; font-size: 16px; }
+QPushButton { background: rgba(0,0,0,0); color: rgba(255,255,255,1); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 4px; }
+QScrollBar:vertical { background: transparent; width: 10px; }
+QListWidget::item:selected { background: rgba(0,188,212,0.31); color: rgba(255,255,255,1); }
+
+QWidget#MainWindow { background: rgba(30,30,30,0.86); color: rgba(255,255,255,1); }
+QWidget#AppRow { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 6px; }
+QWidget#AppRow QLabel { color: rgba(255,255,255,1); font-size: 16px; }

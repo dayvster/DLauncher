@@ -1,0 +1,5 @@
+/* Solarized built-in theme */
+QWidget { background: #002b36; color: #839496; font-family: "Sans"; }
+QLineEdit { background: #073642; color: #839496; border: 2px solid #586e75; border-radius: 10px; padding: 6px; }
+QWidget#AppRow { background: rgba(0,43,54,0.78); border-radius: 10px; padding: 6px; }
+QListWidget::item:selected { background: #586e75; }

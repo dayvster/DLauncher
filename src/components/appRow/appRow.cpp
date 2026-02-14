@@ -1,4 +1,5 @@
 #include "appRow.h"
+#include "appRow.h"
 #include <QBrush>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -7,6 +8,7 @@
 #include <QString>
 
 const QString AppRow::rowStyle = R"(
+    /* kept for reference; prefer global QSS from ThemeManager */
     AppRow {
         background-color: rgba(255, 255, 255, 10);
         border-radius: 8px;
@@ -32,11 +34,17 @@ const QString AppRow::nameStyleTemplate = R"(
 
 AppRow::AppRow(QWidget *parent, const DesktopApp &app) : QWidget(parent), app(app)
 {
-  this->setObjectName(QString::fromStdString(app.name));
+  // Use a stable object name so theme QSS selectors can target rows
+  this->setObjectName("AppRow");
   this->setToolTip(QString::fromStdString(app.comment.value_or("")));
   this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-  this->setStyleSheet(rowStyle);
+  // Prefer global QSS where possible; only keep minimal inline styling that
+  // doesn't conflict with the global stylesheet. Move row visuals into the
+  // ThemeManager-generated QSS so themes can control appearance consistently.
+  // Remove the fixed inline stylesheet to allow application-level QSS to take
+  // effect.
+  // this->setStyleSheet(rowStyle);
 
   QHBoxLayout *layout = new QHBoxLayout(this);
   layout->setSpacing(4);
@@ -86,6 +94,8 @@ AppRow::AppRow(QWidget *parent, const DesktopApp &app) : QWidget(parent), app(ap
   layout->addWidget(iconLabel);
 
   QLabel *nameLabel = new QLabel(QString::fromStdString(app.name), this);
+  // Rely on the global stylesheet for font size/color. Keep a minimal local
+  // override only if the theme hasn't provided a rule (fallback to default).
   nameLabel->setStyleSheet(nameStyleTemplate.arg(TEXT_SIZE + 4));
   nameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
   layout->addWidget(nameLabel);

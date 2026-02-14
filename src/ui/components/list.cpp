@@ -1,4 +1,5 @@
 #include "list.h"
+#include "../../utils/debug.h"
 #include <iostream>
 #include "list.h"
 
@@ -26,11 +27,14 @@ QString StyleSheet = R"(
 
 ListView::ListView(QWidget *parent) : QWidget(parent)
 {
+  this->setObjectName("ListView");
   listWidget = new QListWidget(this);
+  listWidget->setObjectName("AppListWidget");
   listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
   listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  listWidget->setStyleSheet(StyleSheet);
+  // Defer styling to global QSS/theme. Avoid per-widget stylesheet here so
+  // application stylesheet can control appearance.
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(listWidget);
 
@@ -40,8 +44,11 @@ ListView::ListView(QWidget *parent) : QWidget(parent)
 ListView::ListView(QWidget *parent, const QList<QWidget *> &rows)
     : QWidget(parent)
 {
+  this->setObjectName("ListView");
   listWidget = new QListWidget(this);
-  listWidget->setStyleSheet(StyleSheet);
+  listWidget->setObjectName("AppListWidget");
+  // Defer styling to global QSS/theme. Avoid per-widget stylesheet here so
+  // application stylesheet can control appearance.
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(listWidget);
   setLayout(layout);
@@ -59,7 +66,7 @@ void ListView::addRow(QWidget *row)
   listWidget->setItemWidget(item, row);
   count++;
   // Debug: log when rows are added to help diagnose empty UI issues
-  std::cout << "[ListView] addRow: now has " << count << " rows" << std::endl;
+  Debug::log(std::string("[ListView] addRow: now has ") + std::to_string(count) + " rows");
 }
 
 void ListView::removeAllRows()
@@ -68,7 +75,7 @@ void ListView::removeAllRows()
   {
     listWidget->clear();
     count = 0;
-    std::cout << "[ListView] removeAllRows: cleared" << std::endl;
+    Debug::log("[ListView] removeAllRows: cleared");
   }
 }
 

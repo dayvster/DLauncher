@@ -2,14 +2,20 @@
 #include <iostream>
 #include <string>
 
+static int gVerbosity = 0;
+
+void Debug::setVerbosity(int v) { gVerbosity = v; }
+
+int Debug::verbosity() { return gVerbosity; }
+
 void Debug::log(const char *message)
 {
-  std::cout << message << std::endl;
+  if (gVerbosity > 0) std::cout << message << std::endl;
 }
 
 void Debug::log(const std::string &message)
 {
-  std::cout << message << std::endl;
+  if (gVerbosity > 0) std::cout << message << std::endl;
 }
 
 /*

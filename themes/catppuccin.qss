@@ -1,0 +1,5 @@
+/* Catppuccin (mocha) theme */
+QWidget { background: #1e1e2e; color: #cdd6f4; font-family: "FiraCode"; }
+QLineEdit { background: #11111b; color: #cdd6f4; border: 2px solid #313244; border-radius: 8px; padding: 6px; }
+QWidget#AppRow { background: rgba(49,50,68,0.86); border-radius: 8px; padding: 6px; }
+QListWidget::item:selected { background: #89b4fa; }

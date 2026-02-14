@@ -1,0 +1,10 @@
+/* Light built-in theme */
+QWidget { background: #F7F7F7; color: #222222; font-family: "Sans"; }
+QListWidget#AppListWidget, QListWidget { background: transparent; color: #222222; border: none; }
+QLineEdit { background: #FFFFFF; color: #222222; border: 2px solid #CCCCCC; border-radius: 10px; padding: 6px; font-size: 14px; }
+QPushButton { background: rgba(0,0,0,0); color: #222222; border: 1px solid rgba(0,0,0,0.08); border-radius: 6px; padding: 4px; }
+QListWidget::item:selected { background: #BFD7FF; }
+
+QWidget#MainWindow { background: #F7F7F7; color: #222222; }
+QWidget#AppRow { background: rgba(255,255,255,0.7); border-radius: 10px; padding: 6px; }
+QWidget#AppRow QLabel { color: #222222; font-size: 14px; }

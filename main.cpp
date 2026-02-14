@@ -40,11 +40,16 @@ int main(int argc, char *argv[])
   // frequency store
   FrequencyStore freqStore(freqPath);
 
-  Debug::log("Debug run string: " + Debug::generateRandomString());
+  // We'll print a small debug run string after parsing args so its output
+  // respects the -v/-vvv flags (verbosity is set while parsing argv).
+  // Set default verbosity from env/args later; Debug::setVerbosity() will be
+  // called while parsing -v flags.
   AppReader appReader;
   QApplication app(argc, argv);
   ThemeManager themeManager;
   const Theme &theme = themeManager.currentTheme();
+  // theme selection may be provided via CLI (--theme <name>); default stylesheet
+  // from ~/.config/dlauncher/style.qss will be loaded later if present.
   GlobalEventListener globalKbListener(app);
 
   // By default include all .desktop entries (don't skip NoDisplay/Hidden/OnlyShowIn)
@@ -55,11 +60,19 @@ int main(int argc, char *argv[])
   std::string debugAppPattern;
   bool rebuildCache = false;
   bool dumpInMem = false;
+  std::string themeName;
+  bool testQss = false;
   std::vector<std::pair<std::string, std::string>> menuItems; // label, command
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
+    if (arg == "-v") {
+      Debug::setVerbosity(std::max(Debug::verbosity(), 1));
+    } else if (arg == "-vvv") {
+      Debug::setVerbosity(std::max(Debug::verbosity(), 3));
+    }
     if (arg == "--include-hidden" || arg == "--show-hidden") includeHidden = true;
     else if (arg == "--show-system") showSystem = true;
+    else if (arg == "--theme" && i + 1 < argc) { themeName = argv[++i]; }
     else if (arg == "--dump") {
       // Diagnostic mode: print each .desktop path and whether it would be included
       dumpMode = true;
@@ -115,14 +128,53 @@ int main(int argc, char *argv[])
     else if (arg == "--rebuild-cache") {
       rebuildCache = true;
     }
+    else if (arg == "--test-qss") {
+      testQss = true;
+    }
     else if (arg == "--dump-inmem") {
       dumpInMem = true;
     }
   }
+  // Print a per-run debug identifier now that we've parsed args and set
+  // verbosity via -v/-vvv. This respects the user's requested verbosity.
+  Debug::log(std::string("Debug run string: ") + Debug::generateRandomString());
   // If rebuildCache is set, disable cache reads so we force a fresh rescan
   appReader.SetCacheEnabled(!rebuildCache);
   appReader.LoadApps(includeHidden, showSystem);
-  std::cout << "[DEBUG] Loaded apps (count) = " << appReader.GetAllApps().size() << std::endl;
+  Debug::log(std::string("[DEBUG] Loaded apps (count) = ") + std::to_string(appReader.GetAllApps().size()));
+
+  // Apply a built-in theme if requested via --theme (or persisted QSS). Track
+  // whether a stylesheet is active so we avoid conflicting palette/attributes.
+  bool usingQss = false;
+  QString appliedQss;
+
+  // If a forced QSS test was requested, use an aggressive global stylesheet to
+  // verify whether application-level QSS is honored by the environment.
+  if (testQss) {
+    usingQss = true;
+    appliedQss = QString("QWidget { background: red !important; color: white !important; }");
+    Debug::log("[DEBUG] Test QSS will be applied (aggressive red background)");
+  }
+  if (!themeName.empty()) {
+    QString qname = QString::fromStdString(themeName);
+    QString qss = themeManager.builtinStyle(qname);
+    if (!qss.isEmpty()) {
+      usingQss = true;
+      appliedQss = qss;
+    }
+  } else {
+    // fallback: load persisted style if present
+    QString globalQss = themeManager.styleSheet();
+    if (!globalQss.isEmpty()) {
+      usingQss = true;
+      appliedQss = globalQss;
+    }
+  }
+
+  // If we decided to use QSS, we will apply it after creating the root
+  // container so that both application and root-level selectors are set by
+  // ThemeManager::applyStyle. (Avoid applying the QSS here before widgets
+  // exist; ThemeManager will set the app stylesheet and palette later.)
 
   if (dumpMode) {
     // Print diagnostics and exit. If debugAppPattern is set only matching lines are printed.
@@ -169,13 +221,30 @@ int main(int argc, char *argv[])
   });
 
   QWidget window;
+  window.setObjectName("MainWindow");
   window.setWindowFlags(devFlags());
   window.setFixedSize(theme.windowWidth, theme.windowHeight);
-  window.setAttribute(Qt::WA_TranslucentBackground);
-  QPalette pal = window.palette();
-  pal.setColor(QPalette::Window, theme.backgroundColor);
-  window.setPalette(pal);
-  window.setAutoFillBackground(true);
+  // If a stylesheet is active, prefer stylesheet painting; don't force
+  // translucent background or override the palette which can prevent QSS
+  // background rules from taking effect.
+  if (usingQss) {
+    window.setAttribute(Qt::WA_TranslucentBackground, false);
+    window.setAttribute(Qt::WA_StyledBackground, true); // ensure stylesheet paints background
+    window.setAutoFillBackground(false);
+    if (!appliedQss.isEmpty()) {
+      // also apply stylesheet directly to the window to ensure top-level
+      // background rules are honored on all platforms
+      window.setStyleSheet(appliedQss);
+      // Debug info
+      qDebug("Applied QSS (len=%d): %s", appliedQss.size(), appliedQss.left(200).toUtf8().constData());
+    }
+  } else {
+    window.setAttribute(Qt::WA_TranslucentBackground);
+    QPalette pal = window.palette();
+    pal.setColor(QPalette::Window, theme.backgroundColor);
+    window.setPalette(pal);
+    window.setAutoFillBackground(true);
+  }
 
   if (theme.windowPosX >= 0 && theme.windowPosY >= 0)
   {
@@ -189,25 +258,19 @@ int main(int argc, char *argv[])
     window.move(x, y);
   }
 
-  ListView *list = new ListView(&window);
+  // Create a root container inside the top-level window so stylesheet painting
+  // reliably applies to a normal child widget (some platforms don't allow
+  // QSS to paint top-level window backgrounds when using translucent flags).
+  QWidget *root = new QWidget(&window);
+  root->setObjectName("MainWindow");
 
-  QVBoxLayout *layout = new QVBoxLayout(&window);
+  ListView *list = new ListView(root);
 
-  LockedLineEdit *input = new LockedLineEdit(&window, list->listWidget);
-  input->setStyleSheet(QString(R"(
-        QLineEdit {
-            background-color: %1;
-            border: 2px solid %2;
-            border-radius: 10px;
-            padding: 10px;
-            color: %3;
-            font-size: %4px;
-        }
-    )")
-                           .arg(theme.inputBackground.name(QColor::HexArgb))
-                           .arg(theme.inputBorder.name(QColor::HexArgb))
-                           .arg(theme.textColor.name(QColor::HexArgb))
-                           .arg(theme.font.pointSize()));
+  QVBoxLayout *layout = new QVBoxLayout(root);
+
+  LockedLineEdit *input = new LockedLineEdit(root, list->listWidget);
+  // Input styling is provided by the global QSS generated from ThemeManager;
+  // keep the font so widgets without QSS still render consistently.
   input->setFont(theme.font);
   input->setPlaceholderText("Search...");
   input->setFocus();
@@ -236,11 +299,23 @@ int main(int argc, char *argv[])
       QListWidgetItem *item = list->listWidget->item(row);
       AppRow *appRow = dynamic_cast<AppRow *>(list->listWidget->itemWidget(item));
       if (appRow) {
-        std::cout << "Exec: " << appRow->app.exec << std::endl;
+        Debug::log(std::string("Exec: ") + appRow->app.exec);
       }
     } });
 
   layout->addWidget(list);
+
+  // place the root container inside the window
+  root->setLayout(layout);
+  root->setGeometry(0, 0, window.width(), window.height());
+
+  // Now apply the theme (global QSS + palette) to the application and root.
+  if (usingQss && !appliedQss.isEmpty()) {
+    // Write the applied qss to the user's config stylesheet so it's visible
+    // in ~/.config/dlauncher/style.qss for inspection.
+    themeManager.applyStyle(app, root, appliedQss, themeManager.currentTheme());
+    window.setStyleSheet(appliedQss);
+  }
 
   QObject::connect(input, &QLineEdit::textChanged, [&](const QString &text)
                    {
@@ -301,9 +376,11 @@ int main(int argc, char *argv[])
         cleanedExec.remove(fieldCode);
         auto [program, args, envAssignments] = parseExecCommand(cleanedExec);
         if (program.isEmpty()) return;
-        std::cout << "Launching: " << program.toStdString();
-        for (const auto &arg : args) std::cout << " " << arg.toStdString();
-        std::cout << std::endl;
+        {
+          std::string launchMsg = std::string("Launching: ") + program.toStdString();
+          for (const auto &arg : args) { launchMsg += std::string(" ") + arg.toStdString(); }
+          Debug::log(launchMsg);
+        }
         freqStore.inc(appRow->app.exec);
         freqStore.save();
         if (envAssignments.isEmpty()) {
@@ -334,6 +411,55 @@ int main(int argc, char *argv[])
   window.move(x, y);
 
   window.show();
+
+  // If we have a stylesheet to apply, aggressively set it on the window and
+  // all child widgets to ensure platforms/compositors that don't honor the
+  // application stylesheet still pick up theming.
+  if (usingQss && !appliedQss.isEmpty()) {
+    std::function<void(QObject*)> applyRec = [&](QObject *o) {
+      QWidget *w = qobject_cast<QWidget*>(o);
+      if (w) {
+        w->setStyleSheet(appliedQss);
+      }
+      const QObjectList &kids = o->children();
+      for (QObject *c : kids) applyRec(c);
+    };
+    applyRec(&window);
+    qDebug("Theme applied recursively to window tree (len=%d)", appliedQss.size());
+    // Dump diagnostics so the user can see what was actually applied at runtime
+    qDebug() << "APPLICATION styleSheet length=" << qApp->styleSheet().size();
+    qDebug() << "WINDOW styleSheet length=" << window.styleSheet().size();
+    qDebug() << "APPLICATION palette Window color=" << qApp->palette().color(QPalette::Window).name();
+    if (list->listWidget->count() > 0) {
+      QListWidgetItem *it = list->listWidget->item(0);
+      QWidget *w = list->listWidget->itemWidget(it);
+      if (w) {
+        qDebug() << "First row objectName=" << w->objectName() << " styleSheetLen=" << w->styleSheet().size();
+        qDebug() << "First row styleSheet (prefix):" << w->styleSheet().left(200);
+      }
+    }
+  }
+
+  // Additionally apply a coherent palette and font derived from Theme so that
+  // widgets that don't pick up QSS still match the theme.
+  if (usingQss) {
+    // Use current Theme values as a base
+    Theme base = themeManager.currentTheme();
+    // if a builtin was requested, override base with it
+    if (!themeName.empty()) base = ThemeManager::themeForBuiltin(QString::fromStdString(themeName));
+    QPalette pal = app.palette();
+    pal.setColor(QPalette::Window, base.backgroundColor);
+    pal.setColor(QPalette::WindowText, base.textColor);
+    pal.setColor(QPalette::Button, base.rowBackground);
+    pal.setColor(QPalette::ButtonText, base.textColor);
+    pal.setColor(QPalette::Base, base.inputBackground);
+    pal.setColor(QPalette::Text, base.textColor);
+    pal.setColor(QPalette::Highlight, base.selectionColor);
+    app.setPalette(pal);
+    app.setFont(base.font);
+    window.setPalette(pal);
+    window.setAutoFillBackground(true);
+  }
 
   // Safety: ensure initial rows are populated (some environments/layout timing
   // issues can leave the list empty). If list is empty, populate from master.

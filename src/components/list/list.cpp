@@ -28,7 +28,8 @@ ListView::ListView(QWidget *parent) : QWidget(parent) {
   listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
   listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  listWidget->setStyleSheet(StyleSheet);
+  // Remove local stylesheet so the global/app stylesheet can control visuals.
+  // listWidget->setStyleSheet(StyleSheet);
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(listWidget);
 
@@ -38,7 +39,7 @@ ListView::ListView(QWidget *parent) : QWidget(parent) {
 ListView::ListView(QWidget *parent, const QList<QWidget *> &rows)
     : QWidget(parent) {
   listWidget = new QListWidget(this);
-  listWidget->setStyleSheet(StyleSheet);
+  // listWidget->setStyleSheet(StyleSheet);
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(listWidget);
   setLayout(layout);

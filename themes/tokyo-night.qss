@@ -1,0 +1,5 @@
+/* Tokyo Night theme */
+QWidget { background: #1a1b26; color: #c0caf5; font-family: "FiraCode"; }
+QLineEdit { background: #24283b; color: #c0caf5; border: 2px solid #394264; border-radius: 8px; padding: 6px; }
+QWidget#AppRow { background: rgba(31,35,53,0.78); border-radius: 8px; padding: 6px; }
+QListWidget::item:selected { background: #7aa2f7; }
