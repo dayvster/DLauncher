@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <map>
+#include <unordered_map>
 
 class FrequencyStore
 {
@@ -13,6 +13,6 @@ public:
 
 private:
   std::string path;
-  std::map<std::string, int> store;
+  std::unordered_map<std::string, int> store;
   bool dirtyFlag = false;
 };

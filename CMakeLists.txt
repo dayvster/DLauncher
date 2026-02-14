@@ -59,14 +59,15 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/ui
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/services
-    ${CMAKE_SOURCE_DIR}/src/components
-    ${CMAKE_SOURCE_DIR}/src/utils
-)
+  target_include_directories(${PROJECT_NAME} PRIVATE
+      ${CMAKE_SOURCE_DIR}/src
+      ${CMAKE_SOURCE_DIR}/src/ui
+      ${CMAKE_SOURCE_DIR}/src/core
+      ${CMAKE_SOURCE_DIR}/src/services
+      ${CMAKE_SOURCE_DIR}/src/components
+      ${CMAKE_SOURCE_DIR}/src/utils
+      ${CMAKE_SOURCE_DIR}/src/core
+  )
 
 if(BUILD_TESTS)
   # Test target for menu parser
