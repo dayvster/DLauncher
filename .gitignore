@@ -1,0 +1,43 @@
+# Build output
+/build/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Editor/IDE
+.vscode/
+.idea/
+*.pro.user
+*.qmake.stash
+
+# Binaries
+/DLauncher
+/menu_parser_test
+*.exe
+*.out
+
+# Object files
+*.o
+*.obj
+
+# Backup files
+*~
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Cache
+.cache/
+*.cache
+
+# Misc
+tags
+compile_commands.json
