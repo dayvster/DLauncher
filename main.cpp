@@ -2,15 +2,17 @@
 #include <filesystem>
 
 #include "LockedLineEdit.h"
-#include "src/ui/components/list.h"
-#include "src/core/listeners/kb.h"
-#include "src/ui/components/appRow.h"
-#include "src/core/apps/readApps.h"
+#include "ui/components/list.h"
+#include "core/listeners/kb.h"
+#include "ui/components/appRow.h"
+#include "core/apps/readApps.h"
 #include "utils.h"
-#include "src/theme/theme.h"
-#include "src/utils/utils.h"
-#include "src/utils/debug.h"
-#include "src/utils/json.hpp"
+#include "theme/theme.h"
+#include "utils/utils.h"
+#include "utils/debug.h"
+#include "utils/json.hpp"
+#include "core/xdg.h"
+#include "core/frequency_store.h"
 #include <QApplication>
 #include <QIcon>
 #include <QLabel>
@@ -31,14 +33,12 @@ Qt::WindowFlags devFlags()
 
 int main(int argc, char *argv[])
 {
-  std::string configDir = std::string(getenv("HOME")) + "/.config";
-  std::string freqPath = configDir + "/dlauncher_freq.txt";
-  std::filesystem::create_directories(configDir);
-  {
-    std::ofstream f(freqPath, std::ios::app);
-    f.close();
-  }
-  std::map<std::string, int> appFrequency = json_util::load_freq(freqPath);
+  // Use XDG helpers and FrequencyStore
+  std::string freqPath = xdg::configPath("dlauncher_freq.txt").string();
+  // ensure dir exists
+  xdg::ensureDir(xdg::configPath(""));
+  // frequency store
+  FrequencyStore freqStore(freqPath);
 
   Debug::log("Debug run string: " + Debug::generateRandomString());
   AppReader appReader;
@@ -49,11 +49,16 @@ int main(int argc, char *argv[])
 
   // By default don't include NoDisplay/Hidden entries; allow override via CLI flag
   bool includeHidden = false;
+  bool dumpMode = false;
   bool menuMode = false;
   std::vector<std::pair<std::string, std::string>> menuItems; // label, command
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
     if (arg == "--include-hidden" || arg == "--show-hidden") includeHidden = true;
+    else if (arg == "--dump") {
+      // Diagnostic mode: print each .desktop path and whether it would be included
+      dumpMode = true;
+    }
     else if (arg == "--menu-file" && i + 1 < argc) {
       menuMode = true;
       std::string path = argv[++i];
@@ -100,6 +105,12 @@ int main(int argc, char *argv[])
     }
   }
   appReader.LoadApps(includeHidden);
+
+  if (dumpMode) {
+    // Print diagnostics and exit
+    appReader.DumpAndPrint(includeHidden);
+    return 0;
+  }
 
   std::string searchTerm = "";
 
@@ -187,9 +198,9 @@ int main(int argc, char *argv[])
     list->listWidget->clear();
     if (search.empty()) {
       std::vector<DesktopApp> allApps = appReader.ReadDesktopApps(64, "");
-      std::sort(allApps.begin(), allApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
-        int fa = appFrequency[a.exec];
-        int fb = appFrequency[b.exec];
+    std::sort(allApps.begin(), allApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
+        int fa = freqStore.get(a.exec);
+        int fb = freqStore.get(b.exec);
         if (fa == fb) {
           return a.name < b.name;
         }
@@ -211,8 +222,8 @@ int main(int argc, char *argv[])
     }
 
     std::sort(filteredApps.begin(), filteredApps.end(), [&](const DesktopApp &a, const DesktopApp &b) {
-      int fa = appFrequency[a.exec];
-      int fb = appFrequency[b.exec];
+      int fa = freqStore.get(a.exec);
+      int fb = freqStore.get(b.exec);
       if (fa == fb) {
         return a.name < b.name;
       }
@@ -243,8 +254,8 @@ int main(int argc, char *argv[])
         std::cout << "Launching: " << program.toStdString();
         for (const auto &arg : args) std::cout << " " << arg.toStdString();
         std::cout << std::endl;
-        appFrequency[appRow->app.exec]++;
-        json_util::save_freq(freqPath, appFrequency);
+        freqStore.inc(appRow->app.exec);
+        freqStore.save();
         if (envAssignments.isEmpty()) {
           QProcess::startDetached(program, args);
         } else {
